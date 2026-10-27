@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Savve</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <img class="logo" src="logo.png" alt="Savve">
+    <h1>Sambungkan ke Server Savve</h1>
+    <p class="lead">Pastikan HP ini tersambung ke <b>WiFi yang sama</b> dengan komputer utama yang sedang membuka aplikasi Savve.</p>
+
+    <button class="btn" id="scan" type="button">Cari Otomatis</button>
+    <div class="status" id="scan-status"></div>
+    <div class="found" id="found"></div>
+
+    <div class="divider">atau ketik alamat</div>
+    <form id="form">
+      <label for="server">Alamat komputer utama</label>
+      <input id="server" type="text" inputmode="url" autocomplete="off" autocapitalize="off" placeholder="contoh: 192.168.1.10:8443">
+      <div class="error" id="error"></div>
+      <button class="btn secondary" id="connect" type="submit">Sambungkan</button>
+    </form>
+    <p class="hint">Alamat ada di komputer utama: menu <b>Server → Sambungkan HP / Perangkat Lain</b>.</p>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const input = $('server');
+    input.value = window.SavveAndroid ? SavveAndroid.getServer() : '';
+
+    function connect(address) {
+      $('error').textContent = '';
+      $('connect').disabled = true;
+      $('connect').innerHTML = '<span class="spinner"></span>Menyambungkan…';
+      SavveAndroid.connect(address);
+    }
+
+    window.onSavveConnectError = (msg) => {
+      $('error').textContent = msg;
+      $('connect').disabled = false;
+      $('connect').textContent = 'Sambungkan';
+    };
+
+    window.onSavveDiscovered = (servers, ownIps) => {
+      $('scan').disabled = false;
+      $('scan').textContent = 'Cari Lagi';
+      const list = $('found');
+      list.innerHTML = '';
+      if (servers.length === 0) {
+        $('scan-status').textContent = ownIps.length
+          ? 'Server tidak ditemukan (IP HP ini: ' + ownIps.join(', ') + '). Pastikan Savve di komputer utama terbuka.'
+          : 'HP ini belum tersambung ke WiFi.';
+        return;
+      }
+      $('scan-status').textContent = 'Ketuk server untuk menyambung:';
+      for (const s of servers) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = '🖥  ' + s;
+        b.addEventListener('click', () => { input.value = s; connect(s); });
+        list.append(b);
+      }
+      if (servers.length === 1) { input.value = servers[0]; connect(servers[0]); }
+    };
+
+    $('scan').addEventListener('click', () => {
+      $('scan').disabled = true;
+      $('found').innerHTML = '';
+      $('scan-status').innerHTML = '<span class="spinner"></span>Mencari server di WiFi… (maks. 30 detik)';
+      SavveAndroid.discover();
+    });
+
+    $('form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!input.value.trim()) { $('error').textContent = 'Isi alamat komputer utama.'; return; }
+      connect(input.value);
+    });
+  </script>
+</body>
+</html>

@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Aplikasi desktop menjalankan Laravel di belakang proxy HTTPS lokal (127.0.0.1)
+        $middleware->trustProxies(at: '127.0.0.1');
+
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'event.selected' => \App\Http\Middleware\EnsureEventSelected::class,

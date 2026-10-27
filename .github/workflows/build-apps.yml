@@ -1,0 +1,73 @@
+name: Build aplikasi Savve
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  windows:
+    name: Installer Windows (.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependency desktop
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build installer
+        working-directory: desktop
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+        run: npm run dist:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Savve-Windows
+          path: desktop/dist/*.exe
+
+  android:
+    name: Aplikasi Android (.apk)
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Siapkan keystore (opsional)
+        if: env.HAS_KEYSTORE == 'true'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/savve.jks"
+          echo "SAVVE_KEYSTORE=$RUNNER_TEMP/savve.jks" >> "$GITHUB_ENV"
+          echo "SAVVE_KEYSTORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "SAVVE_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "SAVVE_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Ganti nama APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk Savve.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Savve-Android
+          path: Savve.apk

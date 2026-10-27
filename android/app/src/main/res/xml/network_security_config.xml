@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Semua koneksi ke server Savve memakai HTTPS. Sertifikat self-signed server lokal
+     diverifikasi manual lewat sidik jari (lihat LanTrust.java). -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

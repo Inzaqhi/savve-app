@@ -15,7 +15,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nota {{ $transaksi->nomor_transaksi }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/Logo.png') }}">
     <style>
         :root {
             --lebar-kertas: 58mm;
@@ -696,7 +696,7 @@
             </div>
 
             <div class="header">
-                <img src="{{ asset('images/logo.png') }}" alt="Savve">
+                <img src="{{ asset('images/Logo.png') }}" alt="Savve">
                 <div class="header-right">
                     <div class="brand">Savve</div>
                     <div class="tagline">Layanan Penitipan Barang</div>

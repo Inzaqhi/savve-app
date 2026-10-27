@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savve — Login</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/Logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         * {
@@ -253,7 +253,7 @@
 
         {{-- Logo --}}
         <div class="relative z-10 animate-fade-up flex justify-start">
-            <img src="{{ asset('images/logo.png') }}" alt="Savve Logo"
+            <img src="{{ asset('images/Logo.png') }}" alt="Savve Logo"
                 class="h-16 w-auto object-contain drop-shadow-lg">
         </div>
 
@@ -325,7 +325,7 @@
 
             {{-- Mobile Logo --}}
             <div class="lg:hidden flex justify-center mb-8 animate-fade-up">
-                <img src="{{ asset('images/logo.png') }}" alt="Savve Logo" class="h-14 w-auto object-contain">
+                <img src="{{ asset('images/Logo.png') }}" alt="Savve Logo" class="h-14 w-auto object-contain">
             </div>
 
             {{-- Greeting --}}

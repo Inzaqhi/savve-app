@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savve Admin — @yield('title')</title>
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/Logo.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
@@ -372,7 +372,7 @@
             <div class="px-5 py-4 flex items-center justify-between"
                 style="border-bottom: 1px solid rgba(255,255,255,0.06)">
                 <div class="flex-1 flex items-center justify-center">
-                    <img src="{{ asset('images/logo.png') }}" alt="Savve Logo" class="h-12 w-auto object-contain">
+                    <img src="{{ asset('images/Logo.png') }}" alt="Savve Logo" class="h-12 w-auto object-contain">
                 </div>
                 <button onclick="closeSidebar()"
                     class="lg:hidden w-7 h-7 flex items-center justify-center rounded-lg text-white flex-shrink-0 ml-2"

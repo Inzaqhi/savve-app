@@ -1,0 +1,45 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.savve.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.savve.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        release {
+            // Isi lewat environment variable saat build rilis (lihat README)
+            def ks = System.getenv('SAVVE_KEYSTORE')
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('SAVVE_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('SAVVE_KEY_ALIAS')
+                keyPassword System.getenv('SAVVE_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig System.getenv('SAVVE_KEYSTORE') ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

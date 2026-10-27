@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>Sambungkan Perangkat</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { align-items: flex-start; }
+    .addr { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 16px; text-align: center; }
+    .addr .url { font-size: 22px; font-weight: 700; color: var(--blue); letter-spacing: 0.5px; user-select: all; }
+    .addr .iface { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .addr img { margin-top: 10px; }
+    ol { padding-left: 20px; line-height: 1.6; font-size: 14px; }
+    .fp { font-family: Consolas, monospace; font-size: 11px; color: var(--muted); word-break: break-all; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Sambungkan HP kasir</h1>
+    <p class="lead">HP/perangkat harus tersambung ke <b>WiFi yang sama</b> dengan komputer ini.</p>
+    <ol>
+      <li>Buka aplikasi <b>Savve</b> di HP Android.</li>
+      <li>Tekan <b>Cari Otomatis</b>, atau ketik alamat di bawah ini.</li>
+      <li>Login dengan akun kasir.</li>
+    </ol>
+    <div id="list"><div class="spinner"></div></div>
+    <p class="hint">Perangkat tanpa aplikasi (laptop/tablet) bisa membuka alamat ini di Chrome. Jika muncul
+      peringatan keamanan, pilih <b>Lanjutan → Lanjutkan</b>. Ini normal untuk server lokal.</p>
+    <div class="fp" id="fp"></div>
+  </div>
+  <script>
+    window.savveDesktop.info().then((info) => {
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      if (!info || info.addresses.length === 0) {
+        list.innerHTML = '<p class="error">Komputer ini belum tersambung ke WiFi/jaringan apa pun.</p>';
+        return;
+      }
+      for (const a of info.addresses) {
+        const box = document.createElement('div');
+        box.className = 'addr';
+        const iface = document.createElement('div');
+        iface.className = 'iface';
+        iface.textContent = a.name;
+        const url = document.createElement('div');
+        url.className = 'url';
+        url.textContent = a.address + ':' + info.port;
+        const img = document.createElement('img');
+        img.src = a.qr;
+        img.alt = a.url;
+        box.append(iface, url, img);
+        list.append(box);
+      }
+      document.getElementById('fp').textContent = 'Sidik jari sertifikat: ' + info.fingerprint;
+    });
+  </script>
+</body>
+</html>

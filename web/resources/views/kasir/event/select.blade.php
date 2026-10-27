@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savve — Pilih Event</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/Logo.png') }}">
     <style>
         * {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -57,7 +57,7 @@
         style="border-color: #ede9fe; box-shadow: 0 1px 8px rgba(0,0,0,0.04)">
         <div class="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <img src="{{ asset('images/logo.png') }}" alt="Savve" class="h-8 w-auto object-contain">
+                <img src="{{ asset('images/Logo.png') }}" alt="Savve" class="h-8 w-auto object-contain">
                 <div>
                     <p class="text-xs font-bold leading-none" style="color: #1e1035">Vendor Savve</p>
                     <p class="text-xs mt-0.5" style="color: #a78bfa">Kasir Panel</p>

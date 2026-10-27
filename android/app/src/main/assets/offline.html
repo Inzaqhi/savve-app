@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Savve - Tidak tersambung</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card" style="text-align:center">
+    <img class="logo" src="logo.png" alt="Savve">
+    <h1>Tidak tersambung ke server</h1>
+    <p class="lead" id="detail"></p>
+    <button class="btn" id="retry" type="button">Coba Lagi</button>
+    <div style="height:10px"></div>
+    <button class="btn secondary" id="change" type="button">Ganti Server</button>
+    <p class="hint" id="error"></p>
+  </div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const server = (q.get('server') || '').replace('https://', '');
+    const err = q.get('error') || '';
+    if (err.startsWith('Sertifikat')) {
+      document.getElementById('detail').textContent = err;
+    } else {
+      document.getElementById('detail').textContent =
+        'Komputer utama ' + (server ? '(' + server + ') ' : '') + 'tidak bisa dihubungi. Pastikan aplikasi Savve di ' +
+        'komputer utama sedang terbuka dan HP ini tersambung ke WiFi yang sama.';
+      document.getElementById('error').textContent = err;
+    }
+    document.getElementById('retry').addEventListener('click', () => SavveAndroid.retry());
+    document.getElementById('change').addEventListener('click', () => SavveAndroid.changeServer());
+  </script>
+</body>
+</html>

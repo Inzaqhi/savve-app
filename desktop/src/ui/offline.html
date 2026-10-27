@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'">
+  <title>Savve - Tidak tersambung</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card" style="text-align:center">
+    <img class="logo" src="logo.png" alt="Savve">
+    <h1>Tidak dapat membuka Savve</h1>
+    <p class="lead" id="detail"></p>
+    <div class="actions">
+      <button class="btn" id="retry" type="button">Coba Lagi</button>
+      <button class="btn secondary" id="change" type="button">Ganti Mode / Server</button>
+    </div>
+  </div>
+  <script>
+    const q = new URLSearchParams(location.search);
+    const isClient = q.get('mode') === 'client';
+    document.getElementById('detail').textContent = isClient
+      ? 'Komputer utama tidak bisa dihubungi. Pastikan aplikasi Savve di komputer utama sedang terbuka ' +
+        'dan komputer ini tersambung ke WiFi yang sama. (' + (q.get('error') || '') + ')'
+      : 'Terjadi kesalahan: ' + (q.get('error') || 'tidak diketahui');
+    document.getElementById('retry').addEventListener('click', () => window.savveDesktop.retry());
+    document.getElementById('change').addEventListener('click', () => window.savveDesktop.changeMode());
+  </script>
+</body>
+</html>

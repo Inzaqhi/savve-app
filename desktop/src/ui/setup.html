@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'">
+  <title>Savve - Pengaturan Awal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="card">
+    <img class="logo" src="logo.png" alt="Savve">
+    <h1>Selamat datang di Savve</h1>
+    <p class="lead">Bagaimana komputer ini akan dipakai?</p>
+
+    <button class="option" id="opt-server" type="button">
+      <strong>Komputer utama (Server)</strong>
+      <span>Data Savve disimpan di komputer ini. HP kasir dan perangkat lain tersambung ke komputer ini
+        lewat WiFi yang sama. Pilih ini untuk satu komputer saja.</span>
+    </button>
+
+    <button class="option" id="opt-client" type="button">
+      <strong>Sambung ke komputer utama (Klien)</strong>
+      <span>Komputer ini hanya membuka Savve dari komputer utama yang sudah berjalan di WiFi yang sama.</span>
+    </button>
+
+    <form id="client-form" class="hidden">
+      <label for="server">Alamat komputer utama</label>
+      <input type="text" id="server" placeholder="contoh: 192.168.1.10:8443" autocomplete="off">
+      <div class="hint">Lihat alamatnya di komputer utama: menu <b>Server → Sambungkan HP / Perangkat Lain</b>.</div>
+      <div class="error" id="error"></div>
+      <div class="actions"><button class="btn" type="submit">Sambungkan</button></div>
+    </form>
+  </div>
+  <script>
+    const form = document.getElementById('client-form');
+    const error = document.getElementById('error');
+    document.getElementById('opt-server').addEventListener('click', () => {
+      window.savveDesktop.setup({ mode: 'server' });
+    });
+    document.getElementById('opt-client').addEventListener('click', (e) => {
+      e.currentTarget.classList.add('active');
+      form.classList.remove('hidden');
+      document.getElementById('server').focus();
+    });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      error.textContent = '';
+      const serverUrl = document.getElementById('server').value.trim();
+      if (!serverUrl) {
+        error.textContent = 'Isi alamat komputer utama.';
+        return;
+      }
+      const res = await window.savveDesktop.setup({ mode: 'client', serverUrl });
+      if (!res.ok) error.textContent = res.error;
+    });
+  </script>
+</body>
+</html>
