@@ -54,6 +54,13 @@ function copyLaravel() {
   console.log('\n== Composer (tanpa dev) ==');
   run('composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-reqs', laravelOut);
   run('composer dump-autoload --optimize --no-dev --no-scripts', laravelOut);
+  // Folder instalasi tidak bisa ditulis saat aplikasi jalan, jadi cache paket & provider dibuat sekarang
+  run('php artisan package:discover --no-ansi', laravelOut);
+  for (const file of ['packages.php', 'services.php']) {
+    if (!fs.existsSync(path.join(laravelOut, 'bootstrap', 'cache', file))) {
+      throw new Error(`bootstrap/cache/${file} tidak terbentuk`);
+    }
+  }
 
   console.log('\n== Build aset (Vite) ==');
   if (!fs.existsSync(path.join(webDir, 'node_modules'))) run('npm install --no-audit --no-fund', webDir);

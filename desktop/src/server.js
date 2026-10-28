@@ -98,7 +98,6 @@ class SavveServer {
     ]) {
       fs.mkdirSync(path.join(this.storageDir, dir), { recursive: true });
     }
-    fs.mkdirSync(path.join(this.dataDir, 'cache'), { recursive: true });
     if (!fs.existsSync(this.dbFile)) fs.writeFileSync(this.dbFile, '');
   }
 
@@ -140,7 +139,6 @@ class SavveServer {
   }
 
   phpEnv() {
-    const cache = (name) => path.join(this.dataDir, 'cache', name);
     return {
       ...process.env,
       APP_NAME: 'Savve',
@@ -152,11 +150,9 @@ class SavveServer {
       APP_LOCALE: 'id',
       APP_FALLBACK_LOCALE: 'en',
       LARAVEL_STORAGE_PATH: this.storageDir,
-      APP_PACKAGES_CACHE: cache('packages.php'),
-      APP_SERVICES_CACHE: cache('services.php'),
-      APP_CONFIG_CACHE: cache('config.php'),
-      APP_ROUTES_CACHE: cache('routes.php'),
-      APP_EVENTS_CACHE: cache('events.php'),
+      // bootstrap/cache (packages.php, services.php) sudah dibuat saat build oleh prepare.mjs,
+      // karena folder instalasi read-only. APP_*_CACHE tidak dipakai: Laravel tidak mengenali
+      // path absolut Windows (C:\...) di sana dan menggabungkannya dengan folder Laravel.
       DB_CONNECTION: 'sqlite',
       DB_DATABASE: this.dbFile,
       DB_BUSY_TIMEOUT: '15000',
