@@ -56,6 +56,14 @@ class Transaksi extends Model
         $kodeEvent = $event->kode_event ?? 'EVT';
         $prefix    = "SVV-{$kodeEvent}-";
 
+        // SQLite (aplikasi desktop) tidak mendukung lockForUpdate(). Penulisan kosong ini mengambil
+        // kunci tulis database lebih dulu, sehingga kasir lain yang menyimpan bersamaan menunggu
+        // sampai transaksi ini selesai dan tidak mendapat nomor yang sama.
+        $connection = (new static)->getConnection();
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->update('update events set id = id where id = ?', [$event->id]);
+        }
+
         $lastNomor = static::where('event_id', $event->id)
             ->where('nomor_transaksi', 'like', $prefix . '%')
             ->lockForUpdate()

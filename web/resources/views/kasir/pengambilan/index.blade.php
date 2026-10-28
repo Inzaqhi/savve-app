@@ -452,12 +452,13 @@
             if (mode !== 'qr') stopQrScanner();
         }
 
-        // Auto buka tab nama jika ada hasil atau error pencarian
+        // Auto buka tab nama jika ada hasil atau error pencarian.
+        // Ditunda sampai seluruh script selesai: switchMode() memakai isScanning yang dideklarasikan di bawah.
         @isset($transaksis)
-            switchMode('nama');
+            document.addEventListener('DOMContentLoaded', () => switchMode('nama'));
         @endisset
         @isset($errorPencarian)
-            switchMode('nama');
+            document.addEventListener('DOMContentLoaded', () => switchMode('nama'));
         @endisset
 
         // ── QR Scanner ──

@@ -41,7 +41,7 @@ return [
             'busy_timeout' => env('DB_BUSY_TIMEOUT'),
             'journal_mode' => env('DB_JOURNAL_MODE'),
             'synchronous' => env('DB_SYNCHRONOUS'),
-            'transaction_mode' => 'DEFERRED',
+            'transaction_mode' => env('DB_TRANSACTION_MODE', 'DEFERRED'),
         ],
 
         'mysql' => [

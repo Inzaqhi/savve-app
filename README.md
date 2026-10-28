@@ -113,6 +113,17 @@ Perubahannya kecil dan tetap kompatibel dengan MySQL/XAMPP:
 * View: `images/logo.png` diganti menjadi `images/Logo.png` sesuai nama file asli. Sebelumnya logo tidak tampil di
   server Linux/hosting.
 * `package-lock.json` diperbarui karena sebelumnya tidak sinkron dengan `package.json`.
+* Perbaikan bug yang ditemukan saat audit:
+  * Tombol **Cetak** di halaman nota tidak tampil, karena aturan CSS khusus cetak berada di luar `@media print`.
+  * Redirect berputar (`ERR_TOO_MANY_REDIRECTS`) saat membuka `/login` atau `/` dalam keadaan masih login.
+  * Pendaftaran akun umum (`/register`) ditutup. Sebelumnya siapa pun di jaringan bisa membuat akun dan otomatis menjadi kasir.
+  * Nomor transaksi bisa kembar atau gagal disimpan ketika beberapa kasir menyimpan bersamaan di SQLite.
+    Sekarang memakai kunci tulis dan percobaan ulang (sudah diuji dengan 20 transaksi serentak).
+  * Halaman hasil pencarian pengambilan barang error JavaScript (`isScanning`), sehingga tombol di halaman itu tidak berfungsi.
+  * Tabel kosong di Kelola Event, Data Transaksi, dan Riwayat menimbulkan error DataTables.
+  * Route tanpa fungsi di controller (`admin/events/{id}`, `admin/users/{id}`, `tambah-barang`, hapus transaksi oleh kasir)
+    yang menghasilkan error 500 dihapus.
+  * Penyebab gagal membuka kamera sekarang ditampilkan (izin ditolak, kamera tidak ada, dipakai aplikasi lain).
 
 ## Catatan teknis
 

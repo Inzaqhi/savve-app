@@ -48,7 +48,7 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('events', EventController::class);
+        Route::resource('events', EventController::class)->except('show');
 
         Route::get('/events/{event}/rekap', [EventController::class, 'rekap'])
             ->name('events.rekap');
@@ -59,7 +59,7 @@ Route::prefix('admin')
         |--------------------------------------------------------------------------
         */
 
-        Route::resource('users', UserController::class);
+        Route::resource('users', UserController::class)->except('show');
 
         /*
 |--------------------------------------------------------------------------
@@ -166,16 +166,12 @@ Route::prefix('kasir')
         Route::get('/transaksi/count-today', [TransaksiController::class, 'countToday'])
             ->name('transaksi.count-today');
 
-        Route::resource('transaksi', TransaksiController::class);
+        Route::resource('transaksi', TransaksiController::class)->except('destroy');
 
         Route::get('/transaksi/{transaksi}/nota', [TransaksiController::class, 'nota'])
             ->name('transaksi.nota');
 
-        Route::get('/transaksi/{transaksi}/tambah-barang', [TransaksiController::class, 'tambahBarang'])
-            ->name('transaksi.tambah-barang');
-
-        Route::post('/transaksi/{transaksi}/tambah-barang', [TransaksiController::class, 'simpanBarang'])
-            ->name('transaksi.simpan-barang');
+        // Fitur tambah barang belum ada di controller (tombolnya juga dinonaktifkan di detail transaksi)
 
         Route::get('transaksi/{transaksi}/edit', [TransaksiController::class, 'edit'])->name('transaksi.edit');
         Route::put('transaksi/{transaksi}', [TransaksiController::class, 'update'])->name('transaksi.update');

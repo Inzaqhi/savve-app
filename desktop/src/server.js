@@ -158,6 +158,9 @@ class SavveServer {
       DB_BUSY_TIMEOUT: '15000',
       DB_JOURNAL_MODE: 'wal',
       DB_SYNCHRONOUS: 'normal',
+      // Kunci tulis di awal transaksi: pengganti lockForUpdate() (tidak ada di SQLite)
+      // agar dua kasir yang menyimpan bersamaan tidak mendapat nomor transaksi yang sama.
+      DB_TRANSACTION_MODE: 'IMMEDIATE',
       SESSION_DRIVER: 'database',
       SESSION_LIFETIME: '720',
       CACHE_STORE: 'database',

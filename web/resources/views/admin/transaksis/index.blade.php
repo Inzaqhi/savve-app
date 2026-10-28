@@ -786,7 +786,8 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            $('#tabel-transaksi').DataTable({
+            // Tabel kosong berisi satu baris colspan yang tidak bisa diproses DataTables
+            if (!$('#tabel-transaksi tbody td[colspan]').length) $('#tabel-transaksi').DataTable({
                 responsive: false,
                 scrollX: true,
                 pageLength: 15,

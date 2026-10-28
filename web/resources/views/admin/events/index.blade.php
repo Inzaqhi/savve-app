@@ -243,7 +243,8 @@
                 $('#tabel-event').DataTable().destroy();
             }
 
-            $('#tabel-event').DataTable({
+            // Tabel kosong berisi satu baris colspan yang tidak bisa diproses DataTables
+            if (!$('#tabel-event tbody td[colspan]').length) $('#tabel-event').DataTable({
                 responsive: false,
                 scrollX: true,
                 pageLength: 10,

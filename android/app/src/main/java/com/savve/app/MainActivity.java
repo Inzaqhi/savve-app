@@ -59,6 +59,8 @@ public class MainActivity extends Activity {
     /** Disuntikkan ke setiap halaman Savve: cetak & unduhan blob lewat Android. */
     private static final String INJECT_JS = "(function(){"
             + "if(window.__savveAndroid)return;window.__savveAndroid=true;"
+            // window.close() (tombol "Tutup" di nota) tidak berlaku di WebView: kembali ke halaman sebelumnya
+            + "window.close=function(){if(history.length>1)history.back();else location.href='/';};"
             // window.print(): salin ukuran kertas dinamis nota agar tetap berlaku saat Android mencetak
             + "window.print=function(){"
             + " var d=document.getElementById('dynamic-page-size'),p=document.getElementById('savve-print-size');"

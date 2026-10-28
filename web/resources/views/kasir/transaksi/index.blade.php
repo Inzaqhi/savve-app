@@ -714,7 +714,8 @@
     <script>
         $(document).ready(function() {
             $.fn.dataTable.ext.errMode = 'none';
-            $('#tabel-riwayat').DataTable({
+            // Tabel kosong berisi satu baris colspan yang tidak bisa diproses DataTables
+            if (!$('#tabel-riwayat tbody td[colspan]').length) $('#tabel-riwayat').DataTable({
                 responsive: false,
                 scrollX: true,
                 pageLength: 10,

@@ -148,7 +148,7 @@ class TransaksiController extends Controller
         $tarifs = Tarif::where('event_id', $event->id)->get()->keyBy('ukuran');
 
         $transaksi = null;
-        $maxAttempts = 3;
+        $maxAttempts = 5;
 
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
@@ -191,8 +191,9 @@ class TransaksiController extends Controller
                 break; // sukses, keluar loop
 
             } catch (\Illuminate\Database\QueryException $e) {
-                // 1062 = duplicate entry
-                if ($e->errorInfo[1] == 1062 && $attempt < $maxAttempts) {
+                // 1062 = duplicate entry (MySQL); 19 = constraint, 5/6 = database terkunci (SQLite)
+                if (in_array($e->errorInfo[1] ?? null, [1062, 19, 5, 6]) && $attempt < $maxAttempts) {
+                    usleep(random_int(50, 250) * 1000);
                     continue; // coba lagi dengan nomor baru
                 }
                 throw $e;
