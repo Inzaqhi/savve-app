@@ -20,6 +20,11 @@ use App\Http\Controllers\Kasir\EventSessionController;
 */
 
 Route::get('/', function () {
+    $user = auth()->user();
+    if ($user) {
+        return redirect()->route($user->role === 'admin' ? 'admin.dashboard' : 'kasir.dashboard');
+    }
+
     return redirect('/login');
 });
 
