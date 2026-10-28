@@ -124,9 +124,9 @@
                         }
                     </style>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        @foreach (['S' => 'Small', 'M' => 'Medium', 'L' => 'Large', 'XL' => 'Extra Large', 'Gadget' => 'Gadget'] as $kode => $label)
-                            <div class="rounded-xl p-3 flex flex-col gap-2.5 {{ $kode === 'Gadget' ? 'tarif-gadget-card' : '' }}"
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        @foreach (\App\Models\Tarif::LABEL as $kode => $label)
+                            <div class="rounded-xl p-3 flex flex-col gap-2.5 "
                                 style="background:#f8faff;border:1.5px solid #e2e8f0">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="px-2 py-1 rounded-lg text-xs font-black text-white flex-shrink-0"
@@ -139,7 +139,7 @@
                                         class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold pointer-events-none"
                                         style="color: #94a3b8">Rp</span>
                                     <input type="number" name="tarif[{{ $kode }}]"
-                                        value="{{ old('tarif.' . $kode, $tarifs[$kode]->harga ?? 0) }}"
+                                        value="{{ old('tarif.' . $kode, $tarifs[$kode]->harga ?? '') }}"
                                         class="w-full rounded-xl pl-9 pr-2 py-2.5 text-sm font-semibold transition"
                                         style="background: white; border: 1.5px solid #e2e8f0; color: #1e293b"
                                         min="0"

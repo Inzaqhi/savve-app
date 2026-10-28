@@ -105,7 +105,7 @@
                         Tanggal</th>
                     <th class="px-5 py-4 text-left whitespace-nowrap"
                         style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em">
-                        Tarif S/M/L/XL/Gadget</th>
+                        Tarif {{ implode('/', \App\Models\Tarif::UKURAN) }}</th>
                     <th class="px-5 py-4 text-left whitespace-nowrap"
                         style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.06em">
                         Status</th>
@@ -151,7 +151,7 @@
                         </td>
                         <td class="px-5 py-4">
                             <div class="flex gap-1 flex-wrap">
-                                @foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $u)
+                                @foreach (\App\Models\Tarif::UKURAN as $u)
                                     <span class="px-2 py-0.5 rounded-lg text-xs font-bold whitespace-nowrap"
                                         style="background: #eff6ff; color: #1d4ed8">
                                         {{ $u }}: Rp {{ number_format($tarifs[$u]->harga ?? 0, 0, ',', '.') }}

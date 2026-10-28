@@ -208,7 +208,7 @@
                                 <div class="px-5 pb-4 flex gap-2 flex-wrap"
                                     style="border-top: 1px solid #f5f3ff; padding-top: 12px">
                                     @php
-                                        $urutanUkuran = ['S' => 1, 'M' => 2, 'L' => 3, 'XL' => 4, 'Gadget' => 5];
+                                        $urutanUkuran = array_flip(\App\Models\Tarif::UKURAN);
                                     @endphp
                                     @foreach ($event->tarifs->sortBy(fn($tarif) => $urutanUkuran[$tarif->ukuran] ?? 99) as $tarif)
                                         <span class="text-xs px-2.5 py-1 rounded-lg font-semibold"

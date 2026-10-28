@@ -68,11 +68,7 @@ class EventController extends Controller
             'kode_event'      => 'required|string|max:20|unique:events,kode_event',
             'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'tarif.S'         => 'required|integer|min:0',
-            'tarif.M'         => 'required|integer|min:0',
-            'tarif.L'         => 'required|integer|min:0',
-            'tarif.XL'        => 'required|integer|min:0',
-            'tarif.Gadget'    => 'required|integer|min:0',
+            ...collect(Tarif::UKURAN)->mapWithKeys(fn($u) => ["tarif.$u" => 'required|integer|min:0'])->all(),
         ]);
 
         $event = Event::create([
@@ -83,7 +79,7 @@ class EventController extends Controller
             'status'          => 'aktif',
         ]);
 
-        foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $ukuran) {
+        foreach (Tarif::UKURAN as $ukuran) {
             Tarif::create([
                 'event_id' => $event->id,
                 'ukuran'   => $ukuran,
@@ -108,11 +104,7 @@ class EventController extends Controller
             'kode_event'      => 'required|string|max:20|unique:events,kode_event,' . $event->id,
             'tanggal_mulai'   => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'tarif.S'         => 'required|integer|min:0',
-            'tarif.M'         => 'required|integer|min:0',
-            'tarif.L'         => 'required|integer|min:0',
-            'tarif.XL'        => 'required|integer|min:0',
-            'tarif.Gadget'    => 'required|integer|min:0',
+            ...collect(Tarif::UKURAN)->mapWithKeys(fn($u) => ["tarif.$u" => 'required|integer|min:0'])->all(),
             'status'          => 'required|in:aktif,nonaktif',
         ]);
 
@@ -124,7 +116,7 @@ class EventController extends Controller
             'status'          => $request->status,
         ]);
 
-        foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $ukuran) {
+        foreach (Tarif::UKURAN as $ukuran) {
             Tarif::updateOrCreate(
                 ['event_id' => $event->id, 'ukuran' => $ukuran],
                 ['harga' => $request->tarif[$ukuran]]
@@ -168,7 +160,7 @@ class EventController extends Controller
 
         // Rekap per ukuran
         $rekapUkuran = [];
-        foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $ukuran) {
+        foreach (Tarif::UKURAN as $ukuran) {
 
             $jumlah = $transaksis->sum(
                 fn($t) => $t->details->where('ukuran', $ukuran)->count()

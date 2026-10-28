@@ -21,8 +21,8 @@
         Kategori (Ukuran)
     </label>
     <div class="grid grid-cols-2 gap-2">
-        @foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $u)
-            <label class="cursor-pointer" style="{{ $u == 'Gadget' ? 'grid-column:1 / span 2;' : '' }}">
+        @foreach (\App\Models\Tarif::tersedia($tarifs ?? null) as $u)
+            <label class="cursor-pointer" >
                 <input type="radio" name="items[{{ $index }}][ukuran]" value="{{ $u }}"
                     class="hidden ukuran-radio" {{ $u === $selectedUkuran ? 'checked' : '' }}>
                 <div class="ukuran-box border-2 rounded-xl py-2.5 text-center font-bold text-sm transition"

@@ -239,8 +239,9 @@
         }
 
         .ukuran-badge--short {
-            width: 34px;
+            min-width: 34px;
             height: 34px;
+            padding: 0 2px;
             font-size: 22px;
         }
 
@@ -406,15 +407,29 @@
         }
 
         .barang-table .col-nama {
-            width: 48%;
+            width: 44%;
             font-weight: 700;
             font-size: 10px;
         }
 
         .barang-table .col-detail {
-            width: 20%;
+            width: 24%;
             color: #555;
             font-size: 7px;
+        }
+
+        /* Ukuran barang (S/M/L/XL/XXL) dicetak besar agar mudah dibaca petugas */
+        .barang-table td.col-detail {
+            color: #000;
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.1;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .barang-table td.col-detail.col-detail--panjang {
+            font-size: 10px;
         }
 
         .barang-table .col-harga {
@@ -782,7 +797,7 @@
                         <tr>
                             <th class="col-no">#</th>
                             <th class="col-nama">Nama Barang</th>
-                            <th class="col-detail">Ukuran</th>
+                            <th class="col-detail" style="text-align:center">Ukuran</th>
                             <th class="col-harga">Subtotal</th>
                         </tr>
                     </thead>
@@ -802,7 +817,7 @@
                                         </div>
                                     @endforeach
                                 </td>
-                                <td class="col-detail">{{ $detail->ukuran }}</td>
+                                <td class="col-detail {{ strlen($detail->ukuran) > 3 ? 'col-detail--panjang' : '' }}">{{ $detail->ukuran }}</td>
                                 <td class="col-harga">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
@@ -849,7 +864,7 @@
                 <div class="section-title">— Kategori Barang Ini —</div>
                 @php
                     $ukuranLabel = $h['detail']->ukuran;
-                    $kelasBadge = strlen($ukuranLabel) > 2 ? 'ukuran-badge--long' : 'ukuran-badge--short';
+                    $kelasBadge = strlen($ukuranLabel) > 3 ? 'ukuran-badge--long' : 'ukuran-badge--short';
                 @endphp
                 <div class="kategori-row">
                     <div class="ukuran-badge {{ $kelasBadge }}">{{ $ukuranLabel }}</div>

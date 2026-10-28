@@ -46,6 +46,12 @@ class JenisBarangSeeder extends Seeder
             ['ukuran' => 'XL', 'nama' => 'Carrier',      'urutan' => 3],
             ['ukuran' => 'XL', 'nama' => 'Lainnya',     'urutan' => 99],
 
+            // Ukuran XXL
+            ['ukuran' => 'XXL', 'nama' => 'Koper Besar', 'urutan' => 1],
+            ['ukuran' => 'XXL', 'nama' => 'Carrier Besar', 'urutan' => 2],
+            ['ukuran' => 'XXL', 'nama' => 'Kardus', 'urutan' => 3],
+            ['ukuran' => 'XXL', 'nama' => 'Lainnya', 'urutan' => 99],
+
             // Kategori Gadget
             ['ukuran' => 'Gadget', 'nama' => 'Tas',           'urutan' => 1],
             ['ukuran' => 'Gadget', 'nama' => 'Kamera Laptop', 'urutan' => 2],

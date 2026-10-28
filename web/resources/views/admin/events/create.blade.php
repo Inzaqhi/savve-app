@@ -114,9 +114,9 @@
                         }
                     </style>
 
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                        @foreach (['S' => 'Small', 'M' => 'Medium', 'L' => 'Large', 'XL' => 'Extra Large', 'Gadget' => 'Gadget'] as $kode => $label)
-                            <div class="rounded-xl p-3 flex flex-col gap-2.5 {{ $kode === 'Gadget' ? 'tarif-gadget-card' : '' }}"
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        @foreach (\App\Models\Tarif::LABEL as $kode => $label)
+                            <div class="rounded-xl p-3 flex flex-col gap-2.5 "
                                 style="background:#f8faff;border:1.5px solid #e2e8f0">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="px-2 py-1 rounded-lg text-xs font-black text-white flex-shrink-0"

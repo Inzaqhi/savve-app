@@ -75,7 +75,7 @@
             style="box-shadow: 0 2px 12px rgba(0,0,0,0.04)">
             <div class="px-5 py-4 border-b border-gray-100">
                 <p class="font-black text-gray-800">Rekap per Ukuran</p>
-                <p class="text-xs text-gray-400 mt-0.5">Distribusi barang S/M/L/XL/Gadget</p>
+                <p class="text-xs text-gray-400 mt-0.5">Distribusi barang {{ implode('/', \App\Models\Tarif::UKURAN) }}</p>
             </div>
             <div class="p-5 space-y-4">
                 @php
@@ -84,6 +84,7 @@
                         'M' => ['#ea580c', '#fb923c'],
                         'L' => ['#15803d', '#4ade80'],
                         'XL' => ['#7c3aed', '#a78bfa'],
+                        'XXL' => ['#be185d', '#f472b6'],
                         'Gadget' => ['#0e7490', '#22d3ee'],
                     ];
                     $maxJumlah = max(array_column($rekapUkuran, 'jumlah')) ?: 1;

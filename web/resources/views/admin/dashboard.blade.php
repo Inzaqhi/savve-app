@@ -300,12 +300,13 @@
         </div>
 
         @php
-            $ukurans = ['S', 'M', 'L', 'XL', 'Gadget'];
+            $ukurans = \App\Models\Tarif::UKURAN;
             $labels = [
                 'S — Loker Kecil',
                 'M — Area Sedang',
                 'L — Area Besar',
                 'XL — Area Koper',
+                'XXL — Area Barang Besar',
                 'Gadget — Loker Elektronik',
             ];
             $colors = [
@@ -313,6 +314,7 @@
                 ['#ea580c', '#fb923c'],
                 ['#15803d', '#4ade80'],
                 ['#7c3aed', '#a78bfa'],
+                ['#be185d', '#f472b6'],
                 ['#0e7490', '#22d3ee'],
             ];
             $totalPerUkuran = [];

@@ -244,7 +244,7 @@
                     Tarif Event Ini
                 </p>
                 <div class="space-y-2">
-                    @foreach (['S', 'M', 'L', 'XL', 'Gadget'] as $u)
+                    @foreach (\App\Models\Tarif::tersedia($tarifs) as $u)
                         <div class="flex justify-between items-center">
                             <span
                                 class="min-w-8 h-8 px-2 flex items-center justify-center rounded-full text-xs font-black text-white"
@@ -283,7 +283,7 @@
                 <ul class="space-y-1.5 text-xs" style="color: #94a3b8">
                     <li>• Satu transaksi bisa berisi banyak kategori barang</li>
                     <li>• Centang semua jenis barang yang dititipkan</li>
-                    <li>• Tarif dihitung per kategori (S/M/L/XL/Gadget)</li>
+                    <li>• Tarif dihitung per kategori ({{ implode('/', \App\Models\Tarif::tersedia($tarifs)) }})</li>
                 </ul>
             </div>
         </div>
@@ -380,10 +380,10 @@
         });
 
         function buildItemHTML(idx) {
-            const ukurans = ['S', 'M', 'L', 'XL', 'Gadget'];
+            const ukurans = @json(\App\Models\Tarif::tersedia($tarifs));
 
             const ukuranButtons = ukurans.map((u, i) => `
-<label class="ukuran-label-${idx} cursor-pointer ${u === 'Gadget' ? 'col-span-2' : ''}">
+<label class="ukuran-label-${idx} cursor-pointer ">
     <input type="radio" name="items[${idx}][ukuran]" value="${u}"
         class="hidden ukuran-radio" ${i === 0 ? 'checked' : ''}>
     <div class="ukuran-box border-2 rounded-xl py-2.5 text-center font-bold text-sm transition"
