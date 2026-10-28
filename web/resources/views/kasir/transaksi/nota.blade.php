@@ -585,7 +585,9 @@
 
             .nota-wrapper {
                 width: var(--lebar-cetak-aman) !important;
-                margin: 0 !important;
+                /* Di tengah kertas 58 mm: printer thermal hanya mencetak ±48 mm bagian tengah,
+                   jadi isi yang rata kiri terpotong di sisi kiri. */
+                margin: 0 auto !important;
                 padding: var(--pad-y-print) var(--pad-x-print) !important;
             }
         }
