@@ -57,6 +57,10 @@ Lokasi data: `%APPDATA%\Savve\data` (bisa dibuka lewat **Server → Buka Folder 
 
 ### Cetak nota
 
+* **Cetak di Komputer Server** (disarankan untuk HP kasir): di halaman nota, tekan **🖥️ Cetak di Komputer Server**.
+  Nota langsung keluar dari printer yang terpasang di komputer server, tanpa printer Bluetooth atau aplikasi tambahan di HP.
+  Syaratnya, printer nota sudah dipilih di komputer server (menu **Savve → Ganti Printer Nota…**).
+
 * **Windows:** tombol cetak nota membuka dialog print Windows seperti biasa.
 * **Android:** tombol cetak membuka layanan print Android. Printer thermal Bluetooth biasanya butuh aplikasi
   *print service* dari merek printernya, atau aplikasi seperti **RawBT**, supaya muncul di daftar printer.

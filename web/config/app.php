@@ -67,6 +67,10 @@ return [
 
     'timezone' => env('APP_TIMEZONE', 'UTC'),
 
+    // true jika Laravel dijalankan oleh aplikasi desktop Savve (server WiFi lokal):
+    // mengaktifkan fitur "Cetak di Komputer Server".
+    'savve_desktop' => (bool) env('SAVVE_DESKTOP', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration

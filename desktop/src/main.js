@@ -224,6 +224,7 @@ async function startServerMode() {
     port: config.port || 8443,
     version: app.getVersion(),
     log: (...a) => console.log('[savve]', ...a),
+    onPrintJob: printJobFromDevice,
   });
   try {
     await server.start();
@@ -367,6 +368,10 @@ ipcMain.handle('savve:print-nota', async (event, size) => {
   const printer = await choosePrinter(BrowserWindow.fromWebContents(wc));
   if (!printer) return { success: false, reason: 'cancelled' };
 
+  return printSheets(wc, printer, widthMm, sheets);
+});
+
+async function printSheets(wc, printer, widthMm, sheets) {
   try {
     for (let i = 0; i < sheets.length; i++) {
       await wc.executeJavaScript(`window.savvePilihLembar(${i}, ${sheets[i]})`);
@@ -384,7 +389,48 @@ ipcMain.handle('savve:print-nota', async (event, size) => {
   } finally {
     await wc.executeJavaScript('window.savvePilihLembar(-1)').catch(() => {});
   }
-});
+}
+
+// "Cetak di Komputer Server" dari HP/perangkat lain: buka nota (tautan bertanda tangan dari Laravel)
+// di jendela tersembunyi lalu cetak ke printer nota komputer ini. Dijalankan bergiliran.
+let printQueue = Promise.resolve();
+
+function printJobFromDevice(job) {
+  const run = printQueue.then(() => printNotaHidden(job));
+  printQueue = run.catch(() => {});
+  return run;
+}
+
+async function printNotaHidden(job) {
+  if (!server) return { ok: false, message: 'Server belum siap.' };
+  const printers = await mainWindow.webContents.getPrintersAsync();
+  const printer = config.notaPrinter;
+  if (!printer || !printers.some((p) => p.name === printer)) {
+    return {
+      ok: false,
+      message: 'Printer nota belum dipilih di komputer server. Di komputer server buka menu Savve → Ganti Printer Nota.',
+    };
+  }
+  const win = new BrowserWindow({
+    show: false,
+    width: 800,
+    height: 1000,
+    webPreferences: { contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') },
+  });
+  try {
+    await win.loadURL(`https://127.0.0.1:${server.port}${job.url}`);
+    const wc = win.webContents;
+    await wc.executeJavaScript('document.fonts.ready.then(() => new Promise((r) => setTimeout(r, 300)))');
+    const sheets = await wc.executeJavaScript('window.savveUkurLembar ? window.savveUkurLembar() : []');
+    if (!Array.isArray(sheets) || sheets.length === 0) return { ok: false, message: 'Nota tidak bisa dibuka di komputer server.' };
+    const res = await printSheets(wc, printer, 58, sheets.slice(0, 50).map((h) => Math.min(1000, Math.max(20, Number(h) || 150))));
+    return res.success
+      ? { ok: true, message: `${job.title || 'Nota'} dikirim ke printer ${printer} (${sheets.length} lembar).` }
+      : { ok: false, message: res.reason || 'Printer menolak pekerjaan cetak.' };
+  } finally {
+    win.destroy();
+  }
+}
 
 // ------------------------------------------------------------------ backup
 

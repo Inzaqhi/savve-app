@@ -11,6 +11,7 @@ use App\Models\DetailTransaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class TransaksiController extends Controller
 {
@@ -340,6 +341,32 @@ class TransaksiController extends Controller
     }
 
     public function nota(Transaksi $transaksi)
+    {
+        $transaksi->load(['event', 'kasir', 'details']);
+        return view('kasir.transaksi.nota', compact('transaksi'));
+    }
+
+    /**
+     * Minta aplikasi desktop di komputer server mencetak nota ini ke printer nota-nya.
+     * Header X-Savve-Print-Job ditangkap oleh server lokal aplikasi desktop (desktop/src/server.js),
+     * yang mencetak nota lalu mengganti isi respons ini dengan hasilnya.
+     */
+    public function cetakServer(Transaksi $transaksi)
+    {
+        abort_unless(config('app.savve_desktop'), 404);
+
+        $url = URL::temporarySignedRoute('nota.cetak', now()->addMinutes(2), ['transaksi' => $transaksi->id], absolute: false);
+
+        return response()
+            ->json(['ok' => false, 'message' => 'Aplikasi Savve di komputer server tidak merespons.'])
+            ->header('X-Savve-Print-Job', base64_encode(json_encode([
+                'url'   => $url,
+                'title' => 'Nota ' . $transaksi->nomor_transaksi,
+            ])));
+    }
+
+    /** Nota yang dibuka aplikasi desktop lewat tautan bertanda tangan (tanpa login). */
+    public function notaCetak(Transaksi $transaksi)
     {
         $transaksi->load(['event', 'kasir', 'details']);
         return view('kasir.transaksi.nota', compact('transaksi'));

@@ -78,6 +78,8 @@ class SavveServer {
     this.bundledPhp = !!opts.bundledPhp;
     this.version = opts.version || '1.0.0';
     this.log = opts.log || ((...a) => console.log('[savve]', ...a));
+    // Dipanggil saat Laravel meminta nota dicetak di komputer ini: async (job) => ({ ok, message })
+    this.onPrintJob = opts.onPrintJob || null;
 
     this.storageDir = path.join(this.dataDir, 'storage');
     this.dbFile = path.join(this.dataDir, 'savve.sqlite');
@@ -150,6 +152,7 @@ class SavveServer {
       APP_LOCALE: 'id',
       APP_FALLBACK_LOCALE: 'en',
       LARAVEL_STORAGE_PATH: this.storageDir,
+      SAVVE_DESKTOP: 'true',
       // bootstrap/cache (packages.php, services.php) sudah dibuat saat build oleh prepare.mjs,
       // karena folder instalasi read-only. APP_*_CACHE tidak dipakai: Laravel tidak mengenali
       // path absolut Windows (C:\...) di sana dan menggabungkannya dengan folder Laravel.
@@ -348,6 +351,10 @@ class SavveServer {
     const upstream = http.request(
       { host: '127.0.0.1', port: worker.port, method: req.method, path: req.url, headers },
       (up) => {
+        if (up.headers['x-savve-print-job']) {
+          this.handlePrintJob(up, res);
+          return;
+        }
         res.writeHead(up.statusCode, up.statusMessage, up.headers);
         up.pipe(res);
       },
@@ -365,6 +372,41 @@ class SavveServer {
       res.end('Server Savve tidak merespons.');
     });
     req.pipe(upstream);
+  }
+
+  /**
+   * Laravel (route kasir.transaksi.cetak-server) sudah memeriksa login kasir dan menyertakan tautan
+   * nota bertanda tangan di header X-Savve-Print-Job. Nota dicetak di komputer ini, lalu isi respons
+   * diganti dengan hasilnya. Header ini tidak pernah diteruskan ke perangkat kasir.
+   */
+  async handlePrintJob(up, res) {
+    up.resume();
+    const headers = { ...up.headers };
+    delete headers['x-savve-print-job'];
+    delete headers['content-length'];
+    delete headers['transfer-encoding'];
+    headers['content-type'] = 'application/json';
+
+    let result;
+    if (up.statusCode !== 200 || !this.onPrintJob) {
+      result = { ok: false, message: 'Fitur cetak di komputer server tidak tersedia.' };
+    } else {
+      try {
+        const job = JSON.parse(Buffer.from(String(up.headers['x-savve-print-job']), 'base64').toString('utf8'));
+        if (typeof job.url !== 'string' || !job.url.startsWith('/nota-cetak/')) throw new Error('tautan nota tidak valid');
+        result = await Promise.race([
+          this.onPrintJob(job),
+          new Promise((r) => setTimeout(() => r({ ok: false, message: 'Komputer server terlalu lama mencetak. Periksa printer.' }), 90000)),
+        ]);
+      } catch (err) {
+        this.log('Gagal mencetak nota:', err.message);
+        result = { ok: false, message: err.message };
+      }
+    }
+    const body = JSON.stringify(result);
+    headers['content-length'] = Buffer.byteLength(body);
+    res.writeHead(200, headers);
+    res.end(body);
   }
 
   listen(server, port) {

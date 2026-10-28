@@ -171,6 +171,9 @@ Route::prefix('kasir')
         Route::get('/transaksi/{transaksi}/nota', [TransaksiController::class, 'nota'])
             ->name('transaksi.nota');
 
+        Route::post('/transaksi/{transaksi}/cetak-server', [TransaksiController::class, 'cetakServer'])
+            ->name('transaksi.cetak-server');
+
         // Fitur tambah barang belum ada di controller (tombolnya juga dinonaktifkan di detail transaksi)
 
         Route::get('transaksi/{transaksi}/edit', [TransaksiController::class, 'edit'])->name('transaksi.edit');
@@ -223,5 +226,16 @@ Route::prefix('kasir')
         Route::put('/profile/password', [App\Http\Controllers\Kasir\ProfileController::class, 'updatePassword'])
             ->name('profile.password');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Nota untuk dicetak oleh aplikasi desktop di komputer server
+| Hanya lewat tautan bertanda tangan yang berlaku 2 menit (dibuat oleh cetak-server)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/nota-cetak/{transaksi}', [TransaksiController::class, 'notaCetak'])
+    ->middleware('signed:relative')
+    ->name('nota.cetak');
 
 require __DIR__ . '/auth.php';

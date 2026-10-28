@@ -528,6 +528,11 @@
             min-width: 220px;
         }
 
+        .btn-cetak-server {
+            flex: none;
+            width: 100%;
+        }
+
         .print-actions-row {
             display: flex;
             gap: 8px;
@@ -906,6 +911,12 @@
             </button>
             <button class="btn-close" type="button" onclick="window.close()">✕ Tutup</button>
         </div>
+        @if (config('app.savve_desktop') && auth()->check())
+            {{-- Disembunyikan lewat JS jika halaman ini dibuka di komputer server itu sendiri --}}
+            <button id="btnCetakServer" class="btn-print btn-cetak-server" type="button">
+                🖥️ Cetak di Komputer Server
+            </button>
+        @endif
         <div class="print-hint">
             Tips: nonaktifkan opsi "Headers and footers" pada dialog print agar ukuran hasil cetak tetap pas.
         </div>
@@ -930,16 +941,7 @@
                 btn.textContent = '⏳ Menyiapkan...';
 
                 const LEBAR_MM = 58;
-                const JARAK_MM = 8; // ruang kosong per lembar + garis potong
-
-                // Tinggi tiap lembar diukur dengan lebar & padding yang sama seperti saat dicetak
-                // (lebih sempit daripada di layar, sehingga teks membungkus lebih banyak), ditambah
-                // cadangan kecil agar tidak meluber ke halaman berikutnya.
-                document.documentElement.classList.add('ukur-cetak');
-                const tinggiLembar = Array.from(wrappers).map(function(wrapper) {
-                    return Math.ceil((pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM) * 1.03 + 5);
-                });
-                document.documentElement.classList.remove('ukur-cetak');
+                const tinggiLembar = window.savveUkurLembar();
                 const totalMm = tinggiLembar.reduce((a, b) => a + b, 0);
 
                 const existingStyle = document.getElementById('dynamic-page-size');
@@ -990,6 +992,51 @@
         function pxToMm(px) {
             return px / 3.7795275591;
         }
+
+        // Tinggi tiap lembar (mm) diukur dengan lebar & padding yang sama seperti saat dicetak
+        // (lebih sempit daripada di layar, sehingga teks membungkus lebih banyak), ditambah
+        // cadangan kecil agar tidak meluber ke halaman berikutnya. Juga dipanggil aplikasi desktop.
+        window.savveUkurLembar = function() {
+            const JARAK_MM = 8; // ruang kosong per lembar + garis potong
+            document.documentElement.classList.add('ukur-cetak');
+            const tinggi = Array.from(document.querySelectorAll('.nota-wrapper')).map(function(wrapper) {
+                return Math.ceil((pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM) * 1.03 + 5);
+            });
+            document.documentElement.classList.remove('ukur-cetak');
+            return tinggi;
+        };
+
+        // Cetak di komputer server: kirim permintaan, aplikasi Savve di server mencetak ke printer nota-nya.
+        (function() {
+            const btn = document.getElementById('btnCetakServer');
+            if (!btn) return;
+            // Di komputer server sendiri cukup pakai tombol Cetak biasa
+            if (location.hostname === '127.0.0.1' && window.savveDesktop && window.savveDesktop.printNota) {
+                btn.remove();
+                return;
+            }
+            const label = btn.textContent;
+            btn.addEventListener('click', async function() {
+                btn.classList.add('loading');
+                btn.textContent = '⏳ Mengirim ke komputer server...';
+                try {
+                    const res = await fetch('{{ route('kasir.transaksi.cetak-server', $transaksi) }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                        },
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    alert(data.ok ? '✅ ' + data.message : 'Gagal mencetak: ' + (data.message || ('HTTP ' + res.status)));
+                } catch (e) {
+                    alert('Gagal menghubungi komputer server: ' + e.message);
+                } finally {
+                    btn.classList.remove('loading');
+                    btn.textContent = label;
+                }
+            });
+        })();
 
         // Dipanggil aplikasi Windows: tampilkan hanya lembar ke-i saat dicetak (i < 0 = semua lembar).
         window.savvePilihLembar = function(i, tinggiMm) {
