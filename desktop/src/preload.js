@@ -11,4 +11,9 @@ if (location.protocol === 'file:') {
     retry: () => ipcRenderer.invoke('savve:retry'),
     changeMode: () => ipcRenderer.invoke('savve:change-mode'),
   });
+} else {
+  // Halaman Savve dari server: hanya fungsi cetak dengan ukuran kertas nota
+  contextBridge.exposeInMainWorld('savveDesktop', {
+    printNota: (size) => ipcRenderer.invoke('savve:print-nota', size),
+  });
 }

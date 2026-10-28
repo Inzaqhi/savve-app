@@ -43,6 +43,11 @@ function laravelDir() {
   return path.join(__dirname, '..', '..', 'web'); // mode pengembangan
 }
 
+function isSavveUrl(url) {
+  if (config.mode === 'server') return url.startsWith('https://127.0.0.1:');
+  return !!config.serverUrl && url.startsWith(config.serverUrl);
+}
+
 function appUrl() {
   if (config.mode === 'server') return `https://127.0.0.1:${server.port}/login`;
   return config.serverUrl.replace(/\/+$/, '') + '/login';
@@ -105,8 +110,15 @@ function createMainWindow() {
 
   // Tautan ke luar aplikasi (mis. wa.me) dibuka di browser bawaan
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('https://127.0.0.1') || (config.serverUrl && url.startsWith(config.serverUrl))) {
-      return { action: 'allow' };
+    if (isSavveUrl(url)) {
+      // Jendela nota juga butuh preload agar tombol cetak bisa mengatur ukuran kertas
+      return {
+        action: 'allow',
+        overrideBrowserWindowOptions: {
+          autoHideMenuBar: true,
+          webPreferences: { contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') },
+        },
+      };
     }
     shell.openExternal(url);
     return { action: 'deny' };
@@ -303,6 +315,24 @@ ipcMain.handle('savve:retry', () => {
 });
 
 ipcMain.handle('savve:change-mode', () => resetMode());
+
+// Cetak nota dengan ukuran kertas pasti (mikron). Tanpa ini dialog print Windows memakai kertas
+// default driver printer thermal (mis. 58 x 3276 mm) sehingga kertas keluar sangat panjang.
+ipcMain.handle('savve:print-nota', (event, size) => {
+  const wc = event.sender;
+  if (!isSavveUrl(wc.getURL())) return { success: false, reason: 'not allowed' };
+  const clamp = (v, min, max, def) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : def);
+  const widthMm = clamp(size && size.widthMm, 30, 120, 58);
+  const heightMm = clamp(size && size.heightMm, 30, 3000, 200);
+  return new Promise((resolve) => {
+    wc.print({
+      silent: false,
+      printBackground: true,
+      margins: { marginType: 'none' },
+      pageSize: { width: Math.round(widthMm * 1000), height: Math.round(heightMm * 1000) },
+    }, (success, reason) => resolve({ success, reason: reason || '' }));
+  });
+});
 
 // ------------------------------------------------------------------ backup
 

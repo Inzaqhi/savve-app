@@ -424,6 +424,26 @@ public class MainActivity extends Activity {
             });
         }
 
+        /** Cetak dengan ukuran kertas pasti (mis. nota thermal 58 mm x panjang isi nota). */
+        @JavascriptInterface
+        public void printSized(String title, double widthMm, double heightMm) {
+            main.post(() -> {
+                PrintManager pm = (PrintManager) getSystemService(PRINT_SERVICE);
+                String job = (title == null || title.isEmpty()) ? "Savve" : title;
+                double w = Math.max(30, Math.min(120, widthMm));
+                double h = Math.max(30, Math.min(3000, heightMm));
+                // MediaSize memakai satuan mil (1/1000 inci)
+                PrintAttributes.MediaSize size = new PrintAttributes.MediaSize(
+                        "savve_" + Math.round(w) + "x" + Math.round(h), "Nota " + Math.round(w) + " x " + Math.round(h) + " mm",
+                        (int) Math.round(w / 25.4 * 1000), (int) Math.round(h / 25.4 * 1000));
+                PrintAttributes attrs = new PrintAttributes.Builder()
+                        .setMediaSize(size)
+                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
+                        .build();
+                pm.print(job, webView.createPrintDocumentAdapter(job), attrs);
+            });
+        }
+
         @JavascriptInterface
         public void saveBase64(String name, String mime, String base64) {
             io.execute(() -> {

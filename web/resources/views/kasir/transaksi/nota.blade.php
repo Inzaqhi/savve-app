@@ -565,6 +565,13 @@
             font-family: sans-serif;
         }
 
+        /* Dipakai sesaat oleh tombol cetak untuk mengukur tinggi nota dengan ukuran cetak */
+        .ukur-cetak .nota-wrapper {
+            width: var(--lebar-cetak-aman) !important;
+            margin: 0 !important;
+            padding: var(--pad-y-print) var(--pad-x-print) !important;
+        }
+
         /* ===== PRINT STYLES ===== */
         @media print {
 
@@ -898,7 +905,7 @@
         window.addEventListener('load', function() {
             const btn = document.getElementById('btnCetakPdf');
 
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', async function() {
                 const wrappers = document.querySelectorAll('.nota-wrapper');
                 if (!wrappers.length) return;
 
@@ -906,25 +913,20 @@
                 btn.textContent = '⏳ Menyiapkan...';
 
                 const LEBAR_MM = 58;
-                const BUFFER_MM = 20;
+                const JARAK_MM = 8; // ruang kosong per lembar + garis potong
 
-                let tinggiNota = 0;
-                let tinggiLabel = 0;
-
+                // Semua lembar (nota + label) dicetak sebagai satu strip bersambung sepanjang isinya.
+                // Tinggi diukur dengan lebar & padding yang sama seperti saat dicetak (lebih sempit
+                // daripada di layar, sehingga teks membungkus lebih banyak).
+                document.documentElement.classList.add('ukur-cetak');
+                let totalMm = 0;
                 wrappers.forEach(function(wrapper) {
-                    const tipe = wrapper.dataset.tipe;
-                    const tinggi = pxToMm(wrapper.offsetHeight) + BUFFER_MM;
-                    if (tipe === 'nota') {
-                        tinggiNota = Math.max(tinggiNota, tinggi);
-                    } else {
-                        tinggiLabel = Math.max(tinggiLabel, tinggi);
-                    }
+                    totalMm += pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM;
                 });
-
-                if (tinggiLabel === 0) tinggiLabel = tinggiNota;
-
-                document.documentElement.style.setProperty('--tinggi-nota', tinggiNota.toFixed(1) + 'mm');
-                document.documentElement.style.setProperty('--tinggi-label', tinggiLabel.toFixed(1) + 'mm');
+                document.documentElement.classList.remove('ukur-cetak');
+                // Cadangan kecil untuk beda tata letak layar vs cetak, agar tidak meluber ke halaman kedua.
+                // Ukuran halaman harus angka pasti: var() tidak berlaku di dalam @page.
+                totalMm = Math.ceil(totalMm * 1.03 + 5);
 
                 const existingStyle = document.getElementById('dynamic-page-size');
                 if (existingStyle) existingStyle.remove();
@@ -933,20 +935,38 @@
                 style.id = 'dynamic-page-size';
                 style.textContent = `
             @media print {
-                @page { margin: 0; size: ${LEBAR_MM}mm ${tinggiNota.toFixed(1)}mm; }
+                @page { margin: 0; size: ${LEBAR_MM}mm ${totalMm}mm; }
+                .nota-wrapper { page: auto !important; break-before: auto !important; break-after: auto !important; }
+                .nota-wrapper + .nota-separator { display: block !important; height: 0; margin: 4mm 0 !important; border-top: 1px dashed #000; font-size: 0; }
+                .nota-separator::before, .nota-separator::after { display: none !important; }
             }
         `;
                 document.head.appendChild(style);
 
-                requestAnimationFrame(function() {
-                    setTimeout(function() {
+                const selesai = function() {
+                    btn.classList.remove('loading');
+                    btn.textContent = '🖶 Cetak {{ $totalLembar }} Lembar';
+                };
+
+                await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 300)));
+
+                try {
+                    if (window.savveDesktop && window.savveDesktop.printNota) {
+                        // Aplikasi Windows: kirim ukuran kertas langsung ke driver printer,
+                        // supaya printer thermal tidak memakai kertas default (mis. 58 x 3276 mm).
+                        const hasil = await window.savveDesktop.printNota({ widthMm: LEBAR_MM, heightMm: totalMm });
+                        if (hasil && !hasil.success && hasil.reason && hasil.reason !== 'Print job canceled' && hasil.reason !== 'cancelled') {
+                            alert('Gagal mencetak: ' + hasil.reason);
+                        }
+                    } else if (window.SavveAndroid && window.SavveAndroid.printSized) {
+                        window.SavveAndroid.printSized(document.title || 'Nota Savve', LEBAR_MM, totalMm);
+                    } else {
+                        // Browser biasa: ukuran halaman tetap berlaku sampai dialog print ditutup
                         window.print();
-                        const dynStyle = document.getElementById('dynamic-page-size');
-                        if (dynStyle) dynStyle.remove();
-                        btn.classList.remove('loading');
-                        btn.textContent = '🖶 Cetak {{ $totalLembar }} Lembar';
-                    }, 300);
-                });
+                    }
+                } finally {
+                    selesai();
+                }
             });
         });
 
