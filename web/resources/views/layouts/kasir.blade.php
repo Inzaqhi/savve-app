@@ -530,6 +530,20 @@
     </div>
 
     <script>
+        // Pesan jelas saat kamera gagal dibuka (izin ditolak, tidak ada kamera, dipakai aplikasi lain, dll.)
+        window.savveKameraError = function(e) {
+            const nama = e && e.name;
+            const pesan = {
+                NotAllowedError: 'Akses kamera ditolak.\n\nDi Windows: buka Settings → Privacy & security → Camera, aktifkan "Camera access" dan "Let desktop apps access your camera".\nDi HP: izinkan kamera untuk aplikasi Savve di pengaturan aplikasi.',
+                NotFoundError: 'Kamera tidak ditemukan di perangkat ini.\n\nGunakan tombol "Pilih dari Galeri", atau ambil foto lewat HP kasir.',
+                NotReadableError: 'Kamera sedang dipakai aplikasi lain (mis. Zoom, Teams, WhatsApp, aplikasi Kamera).\n\nTutup aplikasi tersebut lalu coba lagi.',
+                OverconstrainedError: 'Kamera tidak mendukung pengaturan yang diminta.',
+                SecurityError: 'Kamera hanya bisa dipakai lewat alamat https://.',
+            } [nama] || (navigator.mediaDevices ? 'Tidak bisa mengakses kamera.' :
+                'Kamera tidak tersedia. Buka Savve lewat alamat https://.');
+            alert(pesan + (nama ? '\n\n(Kode: ' + nama + (e.message ? ' - ' + e.message : '') + ')' : ''));
+        };
+
         function openSidebarKasir() {
             document.getElementById('sidebar-kasir').classList.add('open');
             document.getElementById('sidebar-overlay-kasir').classList.add('active');

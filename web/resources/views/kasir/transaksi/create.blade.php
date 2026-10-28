@@ -626,9 +626,15 @@ ${ukuranButtons}
                     }
                 });
             } catch (e) {
-                streamPenitipan = await navigator.mediaDevices.getUserMedia({
-                    video: true
-                });
+                try {
+                    streamPenitipan = await navigator.mediaDevices.getUserMedia({
+                        video: true
+                    });
+                } catch (err) {
+                    savveKameraError(err);
+                    tutupKamera(type);
+                    return;
+                }
             }
             const video = document.getElementById('video-' + type);
             video.srcObject = streamPenitipan;

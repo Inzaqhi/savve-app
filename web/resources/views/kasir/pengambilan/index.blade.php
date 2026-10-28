@@ -509,16 +509,18 @@
                     video: true
                 }
             ];
+            let kameraErr = null;
             for (const c of constraints) {
                 try {
                     qrStream = await navigator.mediaDevices.getUserMedia(c);
                     break;
                 } catch (e) {
+                    kameraErr = e;
                     continue;
                 }
             }
             if (!qrStream) {
-                alert('Tidak bisa mengakses kamera.');
+                savveKameraError(kameraErr);
                 return;
             }
 
@@ -759,6 +761,7 @@
                 `<div class="bg-white rounded-2xl overflow-hidden w-full max-w-sm mx-4"><div class="flex justify-between items-center px-4 py-3" style="border-bottom:1px solid #f1f5f9"><p class="font-black text-gray-800 text-sm">📷 Foto Pengambilan</p><button onclick="tutupModalQrAmbil()" class="w-8 h-8 flex items-center justify-center rounded-lg" style="background:#f1f5f9;color:#6b7280">✕</button></div><div class="p-4"><div class="rounded-xl overflow-hidden mb-3" style="background:#0f0f1a;width:100%;height:260px;position:relative"><video id="video-qr-ambil" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video></div><canvas id="canvas-qr-ambil" class="hidden"></canvas><button onclick="jepretQrAmbil()" type="button" class="w-full py-3 rounded-xl text-white font-bold text-sm" style="background:linear-gradient(135deg,#5b21b6,#7c3aed)">📸 Jepret Foto</button></div></div>`;
             document.body.appendChild(modal);
             (async () => {
+                let kameraErr = null;
                 for (const c of [{
                         video: {
                             facingMode: {
@@ -772,12 +775,13 @@
                         streamQrAmbil = await navigator.mediaDevices.getUserMedia(c);
                         break;
                     } catch (e) {
+                        kameraErr = e;
                         continue;
                     }
                 }
                 if (streamQrAmbil) document.getElementById('video-qr-ambil').srcObject = streamQrAmbil;
                 else {
-                    alert('Tidak bisa mengakses kamera.');
+                    savveKameraError(kameraErr);
                     tutupModalQrAmbil();
                 }
             })();
@@ -853,6 +857,7 @@
         let streamsDetail = {};
         async function bukaKameraDetail(id) {
             document.getElementById('modal-kamera-detail-' + id).classList.remove('hidden');
+            let kameraErr = null;
             for (const c of [{
                     video: {
                         facingMode: {
@@ -866,12 +871,13 @@
                     streamsDetail[id] = await navigator.mediaDevices.getUserMedia(c);
                     break;
                 } catch (e) {
+                    kameraErr = e;
                     continue;
                 }
             }
             if (streamsDetail[id]) document.getElementById('video-detail-' + id).srcObject = streamsDetail[id];
             else {
-                alert('Tidak bisa mengakses kamera.');
+                savveKameraError(kameraErr);
                 tutupKameraDetail(id);
             }
         }
