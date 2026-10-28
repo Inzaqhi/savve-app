@@ -500,6 +500,12 @@
         /* ===== Tombol aksi (tidak ikut tercetak) ===== */
         .print-actions {
             margin-top: 20px;
+            /* selalu terlihat di bawah layar, walau nota panjang */
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            padding: 10px 0 12px;
+            background: inherit;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -611,60 +617,64 @@
             size: 58mm var(--tinggi-nota);
         }
 
-        .print-actions {
-            display: none !important;
-        }
+        /* Aturan khusus cetak: tombol disembunyikan, warna dipaksa hitam-putih.
+           (Sebelumnya berada di luar @media print sehingga tombol cetak ikut hilang di layar.) */
+        @media print {
+            .print-actions {
+                display: none !important;
+            }
 
-        /*
-             * TAHAP 3: Override warna global, tapi kecualikan area QR code
-             * agar path SVG QR tidak rusak saat dicetak.
-             */
-        *:not(.identity-right):not(.identity-right *) {
-            background: #fff !important;
-            color: #000 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
+            /*
+                 * TAHAP 3: Override warna global, tapi kecualikan area QR code
+                 * agar path SVG QR tidak rusak saat dicetak.
+                 */
+            *:not(.identity-right):not(.identity-right *) {
+                background: #fff !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
 
-        /*
-             * PERBAIKAN KUALITAS QR (2/3):
-             * - shape-rendering: crispEdges mencegah anti-aliasing yang
-             *   membuat tepi modul QR jadi abu-abu/blur saat dicetak.
-             * - image-rendering: pixelated sebagai cadangan untuk browser
-             *   yang merender SVG sebagai raster saat print.
-             * - vector-effect: non-scaling-stroke menjaga ketebalan garis
-             *   tetap konsisten walau SVG di-scale oleh CSS width/height.
-             */
-        .identity-right svg,
-        .identity-right svg * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            shape-rendering: crispEdges !important;
-            image-rendering: pixelated !important;
-            vector-effect: non-scaling-stroke;
-        }
+            /*
+                 * PERBAIKAN KUALITAS QR (2/3):
+                 * - shape-rendering: crispEdges mencegah anti-aliasing yang
+                 *   membuat tepi modul QR jadi abu-abu/blur saat dicetak.
+                 * - image-rendering: pixelated sebagai cadangan untuk browser
+                 *   yang merender SVG sebagai raster saat print.
+                 * - vector-effect: non-scaling-stroke menjaga ketebalan garis
+                 *   tetap konsisten walau SVG di-scale oleh CSS width/height.
+                 */
+            .identity-right svg,
+            .identity-right svg * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                shape-rendering: crispEdges !important;
+                image-rendering: pixelated !important;
+                vector-effect: non-scaling-stroke;
+            }
 
-        /* Hanya paksa putih pada elemen background asli */
-        .identity-right svg rect[fill="#ffffff"],
-        .identity-right svg rect[fill="#FFFFFF"],
-        .identity-right svg rect[fill="white"] {
-            fill: #fff !important;
-        }
+            /* Hanya paksa putih pada elemen background asli */
+            .identity-right svg rect[fill="#ffffff"],
+            .identity-right svg rect[fill="#FFFFFF"],
+            .identity-right svg rect[fill="white"] {
+                fill: #fff !important;
+            }
 
-        /*
-             * PERBAIKAN KUALITAS QR (3/3):
-             * Aturan lama hanya menyasar path[fill="#000000"]. Library QR
-             * (BaconQrCode) kadang merender modul sebagai <rect>, bukan
-             * <path>, sehingga aturan lama tidak kena dan modul ikut
-             * di-grayscale oleh browser saat print (jadi pudar/abu-abu).
-             * Aturan di bawah memaksa SEMUA elemen gambar (rect & path)
-             * yang bukan background menjadi hitam solid, apa pun fill
-             * aslinya.
-             */
-        .identity-right svg rect:not([fill="#ffffff"]):not([fill="#FFFFFF"]):not([fill="white"]),
-        .identity-right svg path:not([fill="none"]) {
-            fill: #000 !important;
-            stroke: none !important;
+            /*
+                 * PERBAIKAN KUALITAS QR (3/3):
+                 * Aturan lama hanya menyasar path[fill="#000000"]. Library QR
+                 * (BaconQrCode) kadang merender modul sebagai <rect>, bukan
+                 * <path>, sehingga aturan lama tidak kena dan modul ikut
+                 * di-grayscale oleh browser saat print (jadi pudar/abu-abu).
+                 * Aturan di bawah memaksa SEMUA elemen gambar (rect & path)
+                 * yang bukan background menjadi hitam solid, apa pun fill
+                 * aslinya.
+                 */
+            .identity-right svg rect:not([fill="#ffffff"]):not([fill="#FFFFFF"]):not([fill="white"]),
+            .identity-right svg path:not([fill="none"]) {
+                fill: #000 !important;
+                stroke: none !important;
+            }
         }
     </style>
 </head>
