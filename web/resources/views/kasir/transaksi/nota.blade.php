@@ -915,22 +915,21 @@
                 const LEBAR_MM = 58;
                 const JARAK_MM = 8; // ruang kosong per lembar + garis potong
 
-                // Semua lembar (nota + label) dicetak sebagai satu strip bersambung sepanjang isinya.
-                // Tinggi diukur dengan lebar & padding yang sama seperti saat dicetak (lebih sempit
-                // daripada di layar, sehingga teks membungkus lebih banyak).
+                // Tinggi tiap lembar diukur dengan lebar & padding yang sama seperti saat dicetak
+                // (lebih sempit daripada di layar, sehingga teks membungkus lebih banyak), ditambah
+                // cadangan kecil agar tidak meluber ke halaman berikutnya.
                 document.documentElement.classList.add('ukur-cetak');
-                let totalMm = 0;
-                wrappers.forEach(function(wrapper) {
-                    totalMm += pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM;
+                const tinggiLembar = Array.from(wrappers).map(function(wrapper) {
+                    return Math.ceil((pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM) * 1.03 + 5);
                 });
                 document.documentElement.classList.remove('ukur-cetak');
-                // Cadangan kecil untuk beda tata letak layar vs cetak, agar tidak meluber ke halaman kedua.
-                // Ukuran halaman harus angka pasti: var() tidak berlaku di dalam @page.
-                totalMm = Math.ceil(totalMm * 1.03 + 5);
+                const totalMm = tinggiLembar.reduce((a, b) => a + b, 0);
 
                 const existingStyle = document.getElementById('dynamic-page-size');
                 if (existingStyle) existingStyle.remove();
 
+                // Untuk browser & Android: semua lembar dicetak bersambung dalam satu halaman.
+                // Ukuran halaman harus angka pasti: var() tidak berlaku di dalam @page.
                 const style = document.createElement('style');
                 style.id = 'dynamic-page-size';
                 style.textContent = `
@@ -952,9 +951,10 @@
 
                 try {
                     if (window.savveDesktop && window.savveDesktop.printNota) {
-                        // Aplikasi Windows: kirim ukuran kertas langsung ke driver printer,
+                        // Aplikasi Windows: ukuran kertas dikirim langsung ke driver printer,
                         // supaya printer thermal tidak memakai kertas default (mis. 58 x 3276 mm).
-                        const hasil = await window.savveDesktop.printNota({ widthMm: LEBAR_MM, heightMm: totalMm });
+                        // Tiap lembar dicetak terpisah dengan panjangnya sendiri dan skala 100%.
+                        const hasil = await window.savveDesktop.printNota({ widthMm: LEBAR_MM, sheets: tinggiLembar });
                         if (hasil && !hasil.success && hasil.reason && hasil.reason !== 'Print job canceled' && hasil.reason !== 'cancelled') {
                             alert('Gagal mencetak: ' + hasil.reason);
                         }
@@ -973,6 +973,31 @@
         function pxToMm(px) {
             return px / 3.7795275591;
         }
+
+        // Dipanggil aplikasi Windows: tampilkan hanya lembar ke-i saat dicetak (i < 0 = semua lembar).
+        window.savvePilihLembar = function(i, tinggiMm) {
+            const root = document.documentElement;
+            document.querySelectorAll('.nota-wrapper').forEach(function(w, idx) {
+                w.classList.toggle('lembar-aktif', idx === i);
+            });
+            let style = document.getElementById('savve-lembar-size');
+            if (i < 0) {
+                root.classList.remove('satu-lembar');
+                if (style) style.remove();
+                return;
+            }
+            root.classList.add('satu-lembar');
+            if (!style) {
+                style = document.createElement('style');
+                style.id = 'savve-lembar-size';
+                document.head.appendChild(style);
+            }
+            style.textContent = `
+            @media print {
+                @page { margin: 0; size: 58mm ${tinggiMm}mm; }
+                .satu-lembar .nota-wrapper:not(.lembar-aktif), .satu-lembar .nota-separator { display: none !important; }
+            }`;
+        };
     </script>
 </body>
 

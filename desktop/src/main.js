@@ -190,6 +190,7 @@ function buildMenu() {
       submenu: [
         { label: 'Halaman Awal', accelerator: 'Alt+Home', click: () => mainWindow.loadURL(appUrl()) },
         { label: 'Ganti Mode (Server / Klien)…', click: () => resetMode() },
+        { label: 'Ganti Printer Nota…', click: () => choosePrinter(mainWindow, true) },
         { type: 'separator' },
         { role: 'quit', label: 'Keluar' },
       ],
@@ -316,22 +317,73 @@ ipcMain.handle('savve:retry', () => {
 
 ipcMain.handle('savve:change-mode', () => resetMode());
 
-// Cetak nota dengan ukuran kertas pasti (mikron). Tanpa ini dialog print Windows memakai kertas
-// default driver printer thermal (mis. 58 x 3276 mm) sehingga kertas keluar sangat panjang.
-ipcMain.handle('savve:print-nota', (event, size) => {
+// ------------------------------------------------------------------ cetak nota
+
+// Printer nota dipilih sekali lalu diingat, supaya tiap lembar bisa dicetak langsung (silent)
+// dengan panjang kertasnya sendiri dan skala 100%.
+async function choosePrinter(parent, force) {
+  const wc = (parent && !parent.isDestroyed() ? parent : mainWindow).webContents;
+  const printers = await wc.getPrintersAsync();
+  if (!force && config.notaPrinter && printers.some((p) => p.name === config.notaPrinter)) {
+    return config.notaPrinter;
+  }
+  if (printers.length === 0) {
+    dialog.showErrorBox('Printer tidak ditemukan', 'Belum ada printer yang terpasang di Windows.');
+    return null;
+  }
+  const shown = printers.slice(0, 8);
+  const def = Math.max(0, shown.findIndex((p) => p.isDefault));
+  const choice = await dialog.showMessageBox(parent || mainWindow, {
+    type: 'question',
+    title: 'Printer Nota',
+    message: 'Pilih printer untuk mencetak nota',
+    detail: 'Pilihan ini diingat. Ganti kapan saja lewat menu Savve → Ganti Printer Nota.',
+    buttons: [...shown.map((p) => p.displayName || p.name), 'Batal'],
+    defaultId: def,
+    cancelId: shown.length,
+    noLink: true,
+  });
+  if (choice.response >= shown.length) return null;
+  config.notaPrinter = shown[choice.response].name;
+  saveConfig();
+  return config.notaPrinter;
+}
+
+function printOnce(wc, options) {
+  return new Promise((resolve) => wc.print(options, (success, reason) => resolve({ success, reason: reason || '' })));
+}
+
+// Tiap lembar (nota, label, ...) dicetak sebagai halaman/print job tersendiri dengan panjang kertas
+// pasti (mikron). Tanpa ukuran pasti, driver printer thermal memakai kertas default (mis. 58 x 3276 mm);
+// satu halaman yang terlalu panjang malah diperkecil oleh driver sehingga tulisan jadi kecil.
+ipcMain.handle('savve:print-nota', async (event, size) => {
   const wc = event.sender;
   if (!isSavveUrl(wc.getURL())) return { success: false, reason: 'not allowed' };
-  const clamp = (v, min, max, def) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : def);
-  const widthMm = clamp(size && size.widthMm, 30, 120, 58);
-  const heightMm = clamp(size && size.heightMm, 30, 3000, 200);
-  return new Promise((resolve) => {
-    wc.print({
-      silent: false,
-      printBackground: true,
-      margins: { marginType: 'none' },
-      pageSize: { width: Math.round(widthMm * 1000), height: Math.round(heightMm * 1000) },
-    }, (success, reason) => resolve({ success, reason: reason || '' }));
-  });
+  const num = (v, min, max, def) => (Number.isFinite(Number(v)) ? Math.min(max, Math.max(min, Number(v))) : def);
+  const widthMm = num(size && size.widthMm, 30, 120, 58);
+  const sheets = Array.isArray(size && size.sheets) ? size.sheets.slice(0, 50).map((h) => num(h, 20, 1000, 150)) : [];
+  if (sheets.length === 0) return { success: false, reason: 'tidak ada lembar' };
+
+  const printer = await choosePrinter(BrowserWindow.fromWebContents(wc));
+  if (!printer) return { success: false, reason: 'cancelled' };
+
+  try {
+    for (let i = 0; i < sheets.length; i++) {
+      await wc.executeJavaScript(`window.savvePilihLembar(${i}, ${sheets[i]})`);
+      const res = await printOnce(wc, {
+        silent: true,
+        deviceName: printer,
+        printBackground: true,
+        scaleFactor: 100,
+        margins: { marginType: 'none' },
+        pageSize: { width: Math.round(widthMm * 1000), height: Math.round(sheets[i] * 1000) },
+      });
+      if (!res.success) return res;
+    }
+    return { success: true, reason: '' };
+  } finally {
+    await wc.executeJavaScript('window.savvePilihLembar(-1)').catch(() => {});
+  }
 });
 
 // ------------------------------------------------------------------ backup
