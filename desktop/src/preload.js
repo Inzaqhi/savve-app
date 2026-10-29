@@ -10,6 +10,9 @@ if (location.protocol === 'file:') {
     info: () => ipcRenderer.invoke('savve:info'),
     retry: () => ipcRenderer.invoke('savve:retry'),
     changeMode: () => ipcRenderer.invoke('savve:change-mode'),
+    printerSettings: () => ipcRenderer.invoke('savve:printer-settings'),
+    savePrinterSettings: (data) => ipcRenderer.invoke('savve:printer-settings-save', data),
+    testPrinter: (printer, label) => ipcRenderer.invoke('savve:printer-test', { printer, label }),
   });
 } else {
   // Halaman Savve dari server: hanya fungsi cetak dengan ukuran kertas nota

@@ -499,6 +499,23 @@ class SavveServer {
     }, null, 2));
   }
 
+  /** Daftar akun kasir (untuk pengaturan printer per kasir). */
+  listKasir() {
+    return new Promise((resolve, reject) => {
+      const code = '$db = new PDO("sqlite:" . $argv[1]);'
+        + 'echo json_encode($db->query("select id, name, email from users where role = \'kasir\' order by name")->fetchAll(PDO::FETCH_ASSOC));';
+      execFile(this.phpBinary, [...this.phpArgs(), '-r', code, this.dbFile], { windowsHide: true },
+        (err, out, stderr) => {
+          if (err) return reject(new Error(stderr || err.message));
+          try {
+            resolve(JSON.parse(out));
+          } catch (e) {
+            reject(e);
+          }
+        });
+    });
+  }
+
   /** Kembalikan backup. Server harus dihentikan dulu. */
   restore(sourceDir) {
     const dbSource = path.join(sourceDir, 'savve.sqlite');

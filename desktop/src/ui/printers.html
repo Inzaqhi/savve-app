@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'">
+  <title>Printer per Kasir</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { align-items: flex-start; }
+    .card { max-width: 680px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    td .email { font-size: 12px; color: var(--muted); }
+    select { width: 100%; font: inherit; padding: 8px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
+    .utama { background: #f5f8ff; border: 1px solid #dbe4f7; border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+    .utama label { margin-top: 0; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    .row select { flex: 1; }
+    .btn.small { padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+    .status { font-size: 13px; margin-top: 12px; min-height: 1em; text-align: center; }
+    .ok { color: #15803d; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Printer per Kasir</h1>
+    <p class="lead">Nota dari tombol <b>Cetak di Komputer Server</b> keluar dari printer milik kasir yang menekannya.
+      Kasir yang tidak diatur memakai printer utama.</p>
+
+    <div class="utama">
+      <label for="utama">Printer utama</label>
+      <div class="row">
+        <select id="utama"></select>
+        <button class="btn secondary small" type="button" data-test="utama">Tes</button>
+      </div>
+      <div class="hint">Juga dipakai untuk tombol Cetak di komputer ini.</div>
+    </div>
+
+    <table>
+      <thead><tr><th style="width:40%">Kasir</th><th>Printer</th><th></th></tr></thead>
+      <tbody id="list"><tr><td colspan="3"><div class="spinner"></div></td></tr></tbody>
+    </table>
+
+    <div class="status" id="status"></div>
+    <div class="actions">
+      <button class="btn" id="save" type="button">Simpan</button>
+    </div>
+    <p class="hint">Tekan <b>Tes</b> untuk mencetak lembar kecil berisi nama kasir, supaya mudah mengenali printer fisiknya.
+      Printer baru (USB atau jaringan) harus dipasang dulu di Windows: Settings → Bluetooth &amp; devices → Printers &amp; scanners.</p>
+  </div>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let data;
+
+    function option(value, text, selected) {
+      const o = document.createElement('option');
+      o.value = value;
+      o.textContent = text;
+      o.selected = selected;
+      return o;
+    }
+
+    function fillPrinters(select, selected, firstLabel) {
+      select.innerHTML = '';
+      select.append(option('', firstLabel, !selected));
+      for (const p of data.printers) select.append(option(p.name, p.label + (p.isDefault ? ' (default Windows)' : ''), p.name === selected));
+      if (selected && !data.printers.some((p) => p.name === selected)) {
+        select.append(option(selected, selected + ' (tidak tersambung)', true));
+      }
+    }
+
+    function status(text, ok) {
+      $('status').textContent = text;
+      $('status').className = 'status ' + (ok ? 'ok' : 'error');
+    }
+
+    async function test(printer, label) {
+      if (!printer) return status('Pilih printernya dulu.', false);
+      status('Mencetak tes ke ' + printer + '…', true);
+      const res = await window.savveDesktop.testPrinter(printer, label);
+      status(res.ok ? 'Lembar tes dikirim ke ' + printer + '.' : 'Gagal mencetak: ' + (res.message || 'printer menolak'), res.ok);
+    }
+
+    async function load() {
+      data = await window.savveDesktop.printerSettings();
+      fillPrinters($('utama'), data.utama, '— Pilih printer utama —');
+      const list = $('list');
+      list.innerHTML = '';
+      if (data.kasir.length === 0) {
+        list.innerHTML = '<tr><td colspan="3" class="hint">Belum ada akun kasir. Tambahkan lewat menu Kelola Kasir (login admin).</td></tr>';
+      }
+      for (const k of data.kasir) {
+        const tr = document.createElement('tr');
+        const name = document.createElement('td');
+        name.innerHTML = '<b></b><div class="email"></div>';
+        name.querySelector('b').textContent = k.name;
+        name.querySelector('.email').textContent = k.email;
+        const sel = document.createElement('select');
+        sel.dataset.kasir = k.id;
+        fillPrinters(sel, data.perKasir[String(k.id)] || '', 'Printer utama');
+        const tdSel = document.createElement('td');
+        tdSel.append(sel);
+        const btn = document.createElement('button');
+        btn.className = 'btn secondary small';
+        btn.type = 'button';
+        btn.textContent = 'Tes';
+        btn.addEventListener('click', () => test(sel.value || $('utama').value, k.name));
+        const tdBtn = document.createElement('td');
+        tdBtn.append(btn);
+        tr.append(name, tdSel, tdBtn);
+        list.append(tr);
+      }
+    }
+
+    document.querySelector('[data-test="utama"]').addEventListener('click', () => test($('utama').value, 'Printer utama'));
+
+    $('save').addEventListener('click', async () => {
+      const perKasir = {};
+      document.querySelectorAll('select[data-kasir]').forEach((s) => { if (s.value) perKasir[s.dataset.kasir] = s.value; });
+      await window.savveDesktop.savePrinterSettings({ utama: $('utama').value, perKasir });
+      status('Tersimpan.', true);
+    });
+
+    load().catch((e) => status('Gagal memuat: ' + e.message, false));
+  </script>
+</body>
+</html>

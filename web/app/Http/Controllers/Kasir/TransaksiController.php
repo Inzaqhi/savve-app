@@ -360,8 +360,11 @@ class TransaksiController extends Controller
         return response()
             ->json(['ok' => false, 'message' => 'Aplikasi Savve di komputer server tidak merespons.'])
             ->header('X-Savve-Print-Job', base64_encode(json_encode([
-                'url'   => $url,
-                'title' => 'Nota ' . $transaksi->nomor_transaksi,
+                'url'      => $url,
+                'title'    => 'Nota ' . $transaksi->nomor_transaksi,
+                // Untuk memilih printer milik kasir yang menekan tombol (diatur di komputer server)
+                'kasir_id' => auth()->id(),
+                'kasir'    => auth()->user()->name,
             ])));
     }
 

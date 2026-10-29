@@ -169,12 +169,32 @@ function openInfoWindow() {
   infoWindow.loadFile(path.join(__dirname, 'ui', 'info.html'));
 }
 
+let printerWindow = null;
+
+function openPrinterWindow() {
+  if (!server) return;
+  if (printerWindow && !printerWindow.isDestroyed()) {
+    printerWindow.focus();
+    return;
+  }
+  printerWindow = new BrowserWindow({
+    width: 760,
+    height: 680,
+    title: 'Printer per Kasir',
+    parent: mainWindow,
+    autoHideMenuBar: true,
+    webPreferences: { contextIsolation: true, sandbox: true, preload: path.join(__dirname, 'preload.js') },
+  });
+  printerWindow.loadFile(path.join(__dirname, 'ui', 'printers.html'));
+}
+
 function buildMenu() {
   const serverMenu = config.mode === 'server'
     ? [{
       label: 'Server',
       submenu: [
         { label: 'Sambungkan HP / Perangkat Lain…', accelerator: 'F2', click: openInfoWindow },
+        { label: 'Printer per Kasir…', click: openPrinterWindow },
         { type: 'separator' },
         { label: 'Backup Data…', click: backupData },
         { label: 'Pulihkan Data dari Backup…', click: restoreData },
@@ -318,6 +338,56 @@ ipcMain.handle('savve:retry', () => {
 
 ipcMain.handle('savve:change-mode', () => resetMode());
 
+ipcMain.handle('savve:printer-settings', async () => {
+  if (!server) return null;
+  const printers = await mainWindow.webContents.getPrintersAsync();
+  return {
+    printers: printers.map((p) => ({ name: p.name, label: p.displayName || p.name, isDefault: !!p.isDefault })),
+    kasir: await server.listKasir(),
+    utama: config.notaPrinter || '',
+    perKasir: config.printerKasir || {},
+  };
+});
+
+ipcMain.handle('savve:printer-settings-save', (_e, data) => {
+  const clean = {};
+  for (const [id, name] of Object.entries((data && data.perKasir) || {})) {
+    if (/^\d+$/.test(id) && typeof name === 'string' && name) clean[id] = name;
+  }
+  config.printerKasir = clean;
+  if (data && typeof data.utama === 'string') {
+    if (data.utama) config.notaPrinter = data.utama;
+    else delete config.notaPrinter;
+  }
+  saveConfig();
+  return { ok: true };
+});
+
+// Cetak lembar tes kecil agar mudah mengenali printer fisik mana milik kasir siapa
+ipcMain.handle('savve:printer-test', async (_e, { printer, label }) => {
+  const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  try {
+    const esc = (t) => String(t || '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const html = `<!doctype html><meta charset="utf-8"><style>@page{margin:0;size:58mm 50mm}
+      body{margin:0;font-family:Verdana,sans-serif;text-align:center}
+      div{width:46mm;margin:4mm auto;border:2px solid #000;padding:3mm 0}
+      h1{font-size:16px;margin:0 0 2mm}p{font-size:11px;margin:1mm 0}</style>
+      <div><h1>TES PRINTER</h1><p><b>${esc(label)}</b></p><p>${esc(printer)}</p><p>Savve</p></div>`;
+    await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+    const res = await printOnce(win.webContents, {
+      silent: true,
+      deviceName: printer,
+      printBackground: true,
+      scaleFactor: 100,
+      margins: { marginType: 'none' },
+      pageSize: { width: 58000, height: 50000 },
+    });
+    return { ok: res.success, message: res.reason };
+  } finally {
+    win.destroy();
+  }
+});
+
 // ------------------------------------------------------------------ cetak nota
 
 // Printer nota dipilih sekali lalu diingat, supaya tiap lembar bisa dicetak langsung (silent)
@@ -393,23 +463,35 @@ async function printSheets(wc, printer, widthMm, sheets) {
 
 // "Cetak di Komputer Server" dari HP/perangkat lain: buka nota (tautan bertanda tangan dari Laravel)
 // di jendela tersembunyi lalu cetak ke printer nota komputer ini. Dijalankan bergiliran.
-let printQueue = Promise.resolve();
+// Printer untuk kasir tertentu (menu Server → Printer per Kasir), atau printer nota utama.
+function printerForKasir(kasirId) {
+  const map = config.printerKasir || {};
+  return (kasirId != null && map[String(kasirId)]) || config.notaPrinter || null;
+}
+
+// Antrean terpisah per printer: printer yang lambat tidak menahan printer kasir lain.
+const printQueues = new Map();
 
 function printJobFromDevice(job) {
-  const run = printQueue.then(() => printNotaHidden(job));
-  printQueue = run.catch(() => {});
+  const key = printerForKasir(job.kasir_id) || '';
+  const prev = printQueues.get(key) || Promise.resolve();
+  const run = prev.then(() => printNotaHidden(job));
+  printQueues.set(key, run.catch(() => {}));
   return run;
 }
 
 async function printNotaHidden(job) {
   if (!server) return { ok: false, message: 'Server belum siap.' };
   const printers = await mainWindow.webContents.getPrintersAsync();
-  const printer = config.notaPrinter;
-  if (!printer || !printers.some((p) => p.name === printer)) {
+  const printer = printerForKasir(job.kasir_id);
+  if (!printer) {
     return {
       ok: false,
-      message: 'Printer nota belum dipilih di komputer server. Di komputer server buka menu Savve → Ganti Printer Nota.',
+      message: 'Printer nota belum dipilih di komputer server. Di komputer server buka menu Server → Printer per Kasir.',
     };
+  }
+  if (!printers.some((p) => p.name === printer)) {
+    return { ok: false, message: `Printer "${printer}" tidak ditemukan di komputer server. Periksa kabel/daya printer.` };
   }
   const win = new BrowserWindow({
     show: false,
