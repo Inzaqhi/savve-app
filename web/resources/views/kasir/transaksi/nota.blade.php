@@ -502,6 +502,12 @@
             margin-bottom: 3px;
         }
 
+        /* Kalimat "simpan nota" di nota utama selalu satu baris (ukuran huruf disesuaikan lewat JS) */
+        .footer .f-warning {
+            white-space: nowrap;
+            letter-spacing: 0;
+        }
+
         .footer .f-note,
         .footer-barang .f-note {
             font-size: 6.5px;
@@ -1054,10 +1060,23 @@
             });
         }
 
+        // Perkecil kalimat "simpan nota" sampai muat satu baris (minimal 5 px)
+        function pasSatuBaris() {
+            document.querySelectorAll('.footer .f-warning').forEach(function(el) {
+                el.style.fontSize = '';
+                let size = parseFloat(getComputedStyle(el).fontSize);
+                while (size > 5 && el.scrollWidth > el.clientWidth + 0.5) {
+                    size -= 0.25;
+                    el.style.fontSize = size + 'px';
+                }
+            });
+        }
+
         window.savveUkurLembar = function() {
             const JARAK_MM = 8; // ruang kosong per lembar + garis potong
             document.documentElement.classList.add('ukur-cetak');
             pasNama();
+            pasSatuBaris();
             const tinggi = Array.from(document.querySelectorAll('.nota-wrapper')).map(function(wrapper) {
                 return Math.ceil((pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM) * 1.03 + 5);
             });
