@@ -19,7 +19,7 @@ return [
     'ukuran'           => 'Size',
     'subtotal'         => 'Subtotal',
     'total'            => 'Total Payment',
-    'simpan_nota'      => 'Keep this receipt as proof of storage',
+    'simpan_nota'      => 'Keep this receipt to claim your items',
     'catatan_nota'     => 'Show this receipt or scan the QR code to pick up your items.<br>Items will not be released without this receipt.',
     'terima_kasih'     => 'Thank You',
     'kategori_ini'     => '— Item Category —',
