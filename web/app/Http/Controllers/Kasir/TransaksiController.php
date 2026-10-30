@@ -340,10 +340,16 @@ class TransaksiController extends Controller
         return view('kasir.transaksi.show', compact('transaksi'));
     }
 
-    public function nota(Transaksi $transaksi)
+    public function nota(Request $request, Transaksi $transaksi)
     {
+        // Bahasa nota (id/en) dipilih kasir lewat ?lang= dan diingat untuk nota berikutnya
+        if (in_array($request->query('lang'), ['id', 'en'], true)) {
+            session(['nota_lang' => $request->query('lang')]);
+        }
+        $notaLang = session('nota_lang', 'id');
+
         $transaksi->load(['event', 'kasir', 'details']);
-        return view('kasir.transaksi.nota', compact('transaksi'));
+        return view('kasir.transaksi.nota', compact('transaksi', 'notaLang'));
     }
 
     /**
@@ -351,11 +357,12 @@ class TransaksiController extends Controller
      * Header X-Savve-Print-Job ditangkap oleh server lokal aplikasi desktop (desktop/src/server.js),
      * yang mencetak nota lalu mengganti isi respons ini dengan hasilnya.
      */
-    public function cetakServer(Transaksi $transaksi)
+    public function cetakServer(Request $request, Transaksi $transaksi)
     {
         abort_unless(config('app.savve_desktop'), 404);
 
-        $url = URL::temporarySignedRoute('nota.cetak', now()->addMinutes(2), ['transaksi' => $transaksi->id], absolute: false);
+        $lang = in_array($request->input('lang'), ['id', 'en'], true) ? $request->input('lang') : session('nota_lang', 'id');
+        $url = URL::temporarySignedRoute('nota.cetak', now()->addMinutes(2), ['transaksi' => $transaksi->id, 'lang' => $lang], absolute: false);
 
         return response()
             ->json(['ok' => false, 'message' => 'Aplikasi Savve di komputer server tidak merespons.'])
@@ -369,10 +376,11 @@ class TransaksiController extends Controller
     }
 
     /** Nota yang dibuka aplikasi desktop lewat tautan bertanda tangan (tanpa login). */
-    public function notaCetak(Transaksi $transaksi)
+    public function notaCetak(Request $request, Transaksi $transaksi)
     {
+        $notaLang = in_array($request->query('lang'), ['id', 'en'], true) ? $request->query('lang') : 'id';
         $transaksi->load(['event', 'kasir', 'details']);
-        return view('kasir.transaksi.nota', compact('transaksi'));
+        return view('kasir.transaksi.nota', compact('transaksi', 'notaLang'));
     }
 
     public function countToday()

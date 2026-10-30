@@ -6,10 +6,23 @@
         $transaksi->details->map(fn($detail) => ['tipe' => 'label', 'detail' => $detail]),
     );
     $totalLembar = $halaman->count();
+
+    // Bahasa nota: 'id' atau 'en' (dipilih kasir di halaman ini)
+    $lang = in_array($notaLang ?? 'id', ['id', 'en']) ? $notaLang ?? 'id' : 'id';
+    $t = fn(string $key, array $r = []) => __('nota.' . $key, $r, $lang);
+    $rp = fn($n) => $lang === 'en'
+        ? 'IDR ' . number_format($n, 0, '.', ',')
+        : 'Rp ' . number_format($n, 0, ',', '.');
+    $namaBarang = fn(string $nama) => $lang === 'en' && trans()->has('nota.barang.' . $nama, 'en', false)
+        ? __('nota.barang.' . $nama, [], 'en')
+        : $nama;
+    $metodeBayar = fn(string $m) => $lang === 'en' && trans()->has('nota.bayar.' . $m, 'en', false)
+        ? __('nota.bayar.' . $m, [], 'en')
+        : $m;
 @endphp
 
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ $lang }}">
 
 <head>
     <meta charset="UTF-8">
@@ -528,6 +541,34 @@
             min-width: 220px;
         }
 
+        .lang-switch {
+            display: flex;
+            border: 1.5px solid #000;
+            border-radius: 6px;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+
+        .lang-switch a {
+            flex: 1;
+            text-align: center;
+            padding: 8px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #000;
+            text-decoration: none;
+            background: #fff;
+        }
+
+        .lang-switch a + a {
+            border-left: 1.5px solid #000;
+        }
+
+        .lang-switch a.aktif {
+            background: #000;
+            color: #fff;
+        }
+
         .btn-cetak-server {
             flex: none;
             width: 100%;
@@ -717,7 +758,7 @@
                 Tidak perlu lagi menjadi pemisah visual antar halaman thermal.
             --}}
             <div class="nota-separator">
-                &#8212; potong di sini &nbsp;&middot;&nbsp; lembar {{ $loop->iteration }} ditempel pada barang &#8212;
+                &#8212; {{ $t('potong', ['n' => $loop->iteration]) }} &#8212;
             </div>
         @endif
 
@@ -729,25 +770,25 @@
             data-tipe="{{ $h['tipe'] }}">
             <div class="doc-title-bar">
                 <span class="doc-title">
-                    {{ $h['tipe'] === 'nota' ? 'Bukti Transaksi Penitipan' : 'Label Identifikasi Barang' }}
+                    {{ $h['tipe'] === 'nota' ? $t('judul_nota') : $t('judul_label') }}
                 </span>
-                <span class="doc-lembar">Lembar {{ $loop->iteration }} / {{ $totalLembar }}</span>
+                <span class="doc-lembar">{{ $t('lembar', ['n' => $loop->iteration, 'total' => $totalLembar]) }}</span>
             </div>
 
             <div class="header">
                 <img src="{{ asset('images/Logo.png') }}" alt="Savve">
                 <div class="header-right">
                     <div class="brand">Savve</div>
-                    <div class="tagline">Layanan Penitipan Barang</div>
+                    <div class="tagline">{{ $t('tagline') }}</div>
                 </div>
             </div>
 
             <div class="identity-block @if ($h['tipe'] !== 'nota') identity-block--label @endif">
                 <div class="identity-left">
-                    <div class="lbl">Nama Penitip</div>
+                    <div class="lbl">{{ $t('nama_penitip') }}</div>
                     <div class="nama">{{ $transaksi->nama_penitip }}</div>
                     <div class="kode-wrap">
-                        <div class="lbl">Kode Penitipan</div>
+                        <div class="lbl">{{ $t('kode_penitipan') }}</div>
                         <div class="kode">{{ $transaksi->nomor_transaksi }}</div>
                     </div>
                 </div>
@@ -760,7 +801,7 @@
                     --}}
                     <div class="identity-right">
                         {!! QrCode::size(300)->margin(1)->errorCorrection('H')->style('square')->generate($transaksi->nomor_transaksi) !!}
-                        <div class="qr-label">Scan saat<br>pengambilan</div>
+                        <div class="qr-label">{!! $t('scan_qr') !!}</div>
                     </div>
                 @endif
             </div>
@@ -768,27 +809,27 @@
             @if ($h['tipe'] === 'nota')
                 <div class="info-section">
                     <div class="info-row">
-                        <span class="lbl">Event</span>
+                        <span class="lbl">{{ $t('event') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->event->nama_event }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">Waktu Penitipan</span>
+                        <span class="lbl">{{ $t('waktu_penitipan') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->waktu_penitipan->format('d/m/Y H:i') }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">No. WhatsApp</span>
+                        <span class="lbl">{{ $t('whatsapp') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->no_whatsapp }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">Metode Bayar</span>
+                        <span class="lbl">{{ $t('metode_bayar') }}</span>
                         <span class="sep">:</span>
-                        <span class="val">{{ $transaksi->metode_bayar }}</span>
+                        <span class="val">{{ $metodeBayar($transaksi->metode_bayar) }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">Kasir</span>
+                        <span class="lbl">{{ $t('kasir') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->kasir->name }}</span>
                     </div>
@@ -796,14 +837,14 @@
 
                 <hr class="divider">
 
-                <div class="section-title">— Daftar Barang —</div>
+                <div class="section-title">{{ $t('daftar_barang') }}</div>
                 <table class="barang-table">
                     <thead>
                         <tr>
                             <th class="col-no">#</th>
-                            <th class="col-nama">Nama Barang</th>
-                            <th class="col-detail" style="text-align:center">Ukuran</th>
-                            <th class="col-harga">Subtotal</th>
+                            <th class="col-nama">{{ $t('nama_barang') }}</th>
+                            <th class="col-detail" style="text-align:center">{{ $t('ukuran') }}</th>
+                            <th class="col-harga">{{ $t('subtotal') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -813,7 +854,7 @@
                                 <td class="col-nama">
                                     @foreach ($detail->jenisBarangFormatted() as $jb)
                                         <div>
-                                            {{ $jb['nama'] }}@if (!empty($jb['nomor_label']))
+                                            {{ $namaBarang($jb['nama']) }}@if (!empty($jb['nomor_label']))
                                                 <span class="nomor-label-badge">#{{ $jb['nomor_label'] }}</span>
                                             @endif
                                             @if (!empty($jb['keterangan']))
@@ -823,7 +864,7 @@
                                     @endforeach
                                 </td>
                                 <td class="col-detail {{ strlen($detail->ukuran) > 3 ? 'col-detail--panjang' : '' }}">{{ $detail->ukuran }}</td>
-                                <td class="col-harga">Rp {{ number_format($detail->subtotal, 0, ',', '.') }}</td>
+                                <td class="col-harga">{{ $rp($detail->subtotal) }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -832,33 +873,30 @@
                 <hr class="divider-solid">
 
                 <div class="total-box">
-                    <span class="total-label">Total Pembayaran</span>
-                    <span class="total-value">Rp {{ number_format($transaksi->total_harga, 0, ',', '.') }}</span>
+                    <span class="total-label">{{ $t('total') }}</span>
+                    <span class="total-value">{{ $rp($transaksi->total_harga) }}</span>
                 </div>
 
                 <div class="footer">
-                    <div class="f-warning">Simpan nota ini sebagai bukti transaksi</div>
-                    <div class="f-note">
-                        Tunjukkan nota atau scan QR saat pengambilan barang.<br>
-                        Barang tidak akan diserahkan tanpa bukti transaksi ini.
-                    </div>
-                    <div class="f-thanks">Terima Kasih</div>
+                    <div class="f-warning">{{ $t('simpan_nota') }}</div>
+                    <div class="f-note">{!! $t('catatan_nota') !!}</div>
+                    <div class="f-thanks">{{ $t('terima_kasih') }}</div>
                     <div class="f-copy">© {{ date('Y') }} Vendor Savve</div>
                 </div>
             @else
                 <div class="info-section">
                     <div class="info-row">
-                        <span class="lbl">Event</span>
+                        <span class="lbl">{{ $t('event') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->event->nama_event }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">Waktu Penitipan</span>
+                        <span class="lbl">{{ $t('waktu_penitipan') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->waktu_penitipan->format('d/m/Y H:i') }}</span>
                     </div>
                     <div class="info-row">
-                        <span class="lbl">No. WhatsApp</span>
+                        <span class="lbl">{{ $t('whatsapp') }}</span>
                         <span class="sep">:</span>
                         <span class="val">{{ $transaksi->no_whatsapp }}</span>
                     </div>
@@ -866,7 +904,7 @@
 
                 <hr class="divider">
 
-                <div class="section-title">— Kategori Barang Ini —</div>
+                <div class="section-title">{{ $t('kategori_ini') }}</div>
                 @php
                     $ukuranLabel = $h['detail']->ukuran;
                     $kelasBadge = strlen($ukuranLabel) > 3 ? 'ukuran-badge--long' : 'ukuran-badge--short';
@@ -874,13 +912,13 @@
                 <div class="kategori-row">
                     <div class="ukuran-badge {{ $kelasBadge }}">{{ $ukuranLabel }}</div>
                     <div style="flex: 1; min-width: 0">
-                        <div class="info-jenis-label">Jenis Barang</div>
+                        <div class="info-jenis-label">{{ $t('jenis_barang') }}</div>
                         @foreach ($h['detail']->jenisBarangFormatted() as $jb)
                             <div class="barang-detail-block">
                                 <div class="info-jenis-nilai">
-                                    {{ $jb['nama'] }}
+                                    {{ $namaBarang($jb['nama']) }}
                                     @if (!empty($jb['nomor_label']))
-                                        <span class="nomor-label-badge">No. {{ $jb['nomor_label'] }}</span>
+                                        <span class="nomor-label-badge">{{ $t('no_label') }} {{ $jb['nomor_label'] }}</span>
                                     @endif
                                 </div>
                                 @if (!empty($jb['keterangan']))
@@ -888,23 +926,26 @@
                                 @endif
                             </div>
                         @endforeach
-                        <div class="info-jenis-tarif">Tarif: Rp
-                            {{ number_format($h['detail']->subtotal, 0, ',', '.') }}</div>
+                        <div class="info-jenis-tarif">{{ $t('tarif') }}: {{ $rp($h['detail']->subtotal) }}</div>
                     </div>
                 </div>
 
                 <div class="footer-barang">
-                    <div class="f-warning">Tempelkan pada barang titipan kategori {{ $h['detail']->ukuran }}</div>
-                    <div class="f-note">
-                        Jangan lepaskan sebelum barang diambil oleh penitip.<br>
-                        Lembar ini digunakan untuk identifikasi saat pengambilan.
-                    </div>
+                    <div class="f-warning">{{ $t('tempelkan', ['ukuran' => $h['detail']->ukuran]) }}</div>
+                    <div class="f-note">{!! $t('catatan_label') !!}</div>
                 </div>
             @endif
         </div>
     @endforeach
 
     <div class="print-actions">
+        @if (auth()->check())
+            {{-- Bahasa nota: untuk pengunjung internasional --}}
+            <div class="lang-switch" role="group" aria-label="Bahasa nota">
+                <a href="?lang=id" class="{{ $lang === 'id' ? 'aktif' : '' }}">🇮🇩 Indonesia</a>
+                <a href="?lang=en" class="{{ $lang === 'en' ? 'aktif' : '' }}">🇬🇧 English</a>
+            </div>
+        @endif
         <div class="print-actions-row">
             <button id="btnCetakPdf" class="btn-print" type="button">
                 🖶 Cetak {{ $totalLembar }} Lembar
@@ -996,9 +1037,27 @@
         // Tinggi tiap lembar (mm) diukur dengan lebar & padding yang sama seperti saat dicetak
         // (lebih sempit daripada di layar, sehingga teks membungkus lebih banyak), ditambah
         // cadangan kecil agar tidak meluber ke halaman berikutnya. Juga dipanggil aplikasi desktop.
+        // Perkecil huruf nama penitip bila ada kata yang tidak muat di kotaknya,
+        // supaya nama tidak terpotong di tengah kata (mis. "SMIT / H").
+        function pasNama() {
+            document.querySelectorAll('.identity-left .nama').forEach(function(el) {
+                el.style.fontSize = '';
+                el.style.wordBreak = 'normal';
+                el.style.overflowWrap = 'normal';
+                let size = parseFloat(getComputedStyle(el).fontSize);
+                while (size > 8 && el.scrollWidth > el.clientWidth + 0.5) {
+                    size -= 0.5;
+                    el.style.fontSize = size + 'px';
+                }
+                el.style.wordBreak = '';
+                el.style.overflowWrap = '';
+            });
+        }
+
         window.savveUkurLembar = function() {
             const JARAK_MM = 8; // ruang kosong per lembar + garis potong
             document.documentElement.classList.add('ukur-cetak');
+            pasNama();
             const tinggi = Array.from(document.querySelectorAll('.nota-wrapper')).map(function(wrapper) {
                 return Math.ceil((pxToMm(wrapper.getBoundingClientRect().height) + JARAK_MM) * 1.03 + 5);
             });
@@ -1025,7 +1084,9 @@
                         headers: {
                             'X-CSRF-TOKEN': '{{ csrf_token() }}',
                             'Accept': 'application/json',
+                            'Content-Type': 'application/json',
                         },
+                        body: JSON.stringify({ lang: '{{ $lang }}' }),
                     });
                     const data = await res.json().catch(() => ({}));
                     alert(data.ok ? '✅ ' + data.message : 'Gagal mencetak: ' + (data.message || ('HTTP ' + res.status)));
